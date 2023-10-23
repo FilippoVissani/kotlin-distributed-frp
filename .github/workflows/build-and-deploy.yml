@@ -1,0 +1,49 @@
+name: CI/CD Process
+on:
+  workflow_call:
+  workflow_dispatch:
+
+jobs:
+  check:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          #- windows-latest
+          #- macos-latest
+        java-version:
+          - 17
+        jdk-dist:
+          - adopt-hotspot
+    runs-on: ${{ matrix.os }}
+    name: Run tests via ${{ matrix.jdk-dist }} JDK v${{ matrix.java-version }}, on ${{ matrix.os }}
+    steps:
+      - name: Set ${{ matrix.jdk-dist }} JDK v${{ matrix.java-version }}
+        uses: actions/setup-java@v3
+        with:
+          distribution: ${{ matrix.jdk-dist }}
+          java-version: ${{ matrix.java-version }}
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Show Env
+        run: ./gradlew --version
+
+      - name: Run tests
+        run: ./gradlew test
+
+  success:
+    runs-on: ubuntu-latest
+    needs:
+      - check
+    if: >-
+      always() && (
+        contains(join(needs.*.result, ','), 'failure')
+        || !contains(join(needs.*.result, ','), 'cancelled')
+      )
+    steps:
+      - name: Verify that there were no failures
+        run: ${{ !contains(join(needs.*.result, ','), 'failure') }}

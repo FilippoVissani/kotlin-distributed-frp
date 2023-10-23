@@ -1,0 +1,32 @@
+[versions]
+build-config = "4.1.2"
+coroutines = "1.7.3"
+dokka = "1.9.10"
+kotest = "5.7.2"
+kotlin = "1.9.10"
+
+[libraries]
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-framework-engine = { module = "io.kotest:kotest-framework-engine", version.ref = "kotest" }
+kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
+kotest-runner-junit5-jvm = { module = "io.kotest:kotest-runner-junit5-jvm", version.ref = "kotest" }
+kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
+kotlin-test-common = { module = "org.jetbrains.kotlin:kotlin-test-common", version.ref = "kotlin" }
+kotlin-test-annotations-common = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common", version.ref = "kotlin" }
+kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+
+[bundles]
+kotlin-testing-common = [
+    "kotest-assertions-core",
+    "kotest-framework-engine",
+    "kotest-framework-datatest",
+    "kotlin-test",
+    "kotlin-test-common",
+    "kotlin-test-annotations-common",
+]
+
+[plugins]
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+taskTree = "com.dorongold.task-tree:2.1.1"
+build-config = { id = "com.github.gmazzo.buildconfig", version.ref = "build-config" }
