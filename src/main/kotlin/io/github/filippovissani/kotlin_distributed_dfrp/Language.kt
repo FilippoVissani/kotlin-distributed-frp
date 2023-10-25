@@ -1,4 +1,4 @@
-package io.github.filippovissani
+package io.github.filippovissani.kotlin_distributed_dfrp
 
 import kotlinx.coroutines.flow.Flow
 

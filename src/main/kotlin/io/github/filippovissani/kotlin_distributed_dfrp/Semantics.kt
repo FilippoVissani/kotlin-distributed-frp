@@ -1,4 +1,4 @@
-package io.github.filippovissani
+package io.github.filippovissani.kotlin_distributed_dfrp
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -29,18 +29,20 @@ interface Semantics : Language {
     }
 
     override fun <T> neighbourSense(sensorID: SensorID): Expression<NeighbourField<T>> {
-        return Expression.of{context, path ->
+        return Expression.of { context, path ->
             alignWithNeighbors(path, context) { _, neighbourState ->
-                neighbourState.sensor<T>(sensorID) }.map { x ->
-                    ExportTree(x) }
+                neighbourState.sensor<T>(sensorID)
+            }.map { x ->
+                ExportTree(x)
+            }
         }
     }
 
     override fun <T> neighbour(expression: Expression<T>): Expression<NeighbourField<T>> {
-        return Expression.of{ context, path ->
+        return Expression.of { context, path ->
             val alignmentPath = path + Neighbour()
-            val neighboringValues = alignWithNeighbors(alignmentPath, context){export, _ -> export?.root as T }
-            expression.compute(alignmentPath, context).zip(neighboringValues){ exp, n ->
+            val neighboringValues = alignWithNeighbors(alignmentPath, context) { export, _ -> export?.root as T }
+            expression.compute(alignmentPath, context).zip(neighboringValues) { exp, n ->
                 val neighborField = n.plus(Pair(context.selfID(), exp.root))
                 ExportTree(neighborField, sequenceOf(Pair(Neighbour(), exp)))
             }

@@ -1,6 +1,6 @@
-package io.github.filippovissani.field
+package io.github.filippovissani.kotlin_distributed_dfrp.field
 
-import io.github.filippovissani.ID
+import io.github.filippovissani.kotlin_distributed_dfrp.ID
 
 fun <T : Comparable<T>> Field<T>.min(includingSelf: Boolean = true): Map.Entry<ID, T>? =
     handle(includingSelf).minByOrNull { it.value }
