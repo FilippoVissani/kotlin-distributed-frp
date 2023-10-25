@@ -1,6 +1,5 @@
-package io.github.filippovissani
+package io.github.filippovissani.kotlin_distributed_dfrp
 
-import io.github.filippovissani.field.Field
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -16,7 +15,7 @@ interface Expression<T>{
 
     companion object{
         fun <T> of(f: (Context, Path) -> Flow<Export<T>>): Expression<T> {
-            return object : Expression<T>{
+            return object : Expression<T> {
                 override fun compute(path: Path, context: Context): Flow<Export<T>> {
                     return f(context, path)
                 }

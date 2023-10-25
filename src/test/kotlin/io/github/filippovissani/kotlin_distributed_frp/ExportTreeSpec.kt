@@ -1,8 +1,8 @@
 package io.github.filippovissani.kotlin_distributed_frp
 
-import io.github.filippovissani.ExportTree
-import io.github.filippovissani.Key
-import io.github.filippovissani.Slot
+import io.github.filippovissani.kotlin_distributed_dfrp.ExportTree
+import io.github.filippovissani.kotlin_distributed_dfrp.Key
+import io.github.filippovissani.kotlin_distributed_dfrp.Slot
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.be
 import io.kotest.matchers.should

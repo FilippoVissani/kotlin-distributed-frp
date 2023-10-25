@@ -1,6 +1,6 @@
-package io.github.filippovissani.field
+package io.github.filippovissani.kotlin_distributed_dfrp.field
 
-import io.github.filippovissani.ID
+import io.github.filippovissani.kotlin_distributed_dfrp.ID
 
 interface Field<T> : Map<ID, T> {
 
