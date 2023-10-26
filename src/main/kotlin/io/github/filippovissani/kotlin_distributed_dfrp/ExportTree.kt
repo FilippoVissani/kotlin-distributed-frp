@@ -11,7 +11,7 @@ interface ExportTree<T> {
     }
 }
 
-internal class ExportTreeImpl<T>(override val root: T, override val children: Map<Slot, ExportTree<*>>) :
+internal data class ExportTreeImpl<T>(override val root: T, override val children: Map<Slot, ExportTree<*>>) :
     ExportTree<T> {
     override fun followPath(path: List<Slot>): ExportTree<*>? = when {
             path.isNotEmpty() -> children[path.first()]?.followPath(path.drop(1))
