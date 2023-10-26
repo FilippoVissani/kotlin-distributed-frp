@@ -1,9 +1,6 @@
 package io.github.filippovissani.kotlin_distributed_dfrp
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.*
 
 typealias DeviceID = ID
 typealias Path = List<Slot>
@@ -17,10 +14,7 @@ interface Computation<T>{
         fun <T> of(f: (Context, Path) -> Flow<Export<T>>): Computation<T> {
             return object : Computation<T> {
                 override fun run(path: Path, context: Context): Flow<Export<T>> {
-                    return f(context, path).transform { export ->
-                        println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
-                        emit(export)
-                    }
+                    return f(context, path).transform { export -> emit(export) }
                 }
             }
         }
@@ -30,7 +24,7 @@ interface Computation<T>{
         }
 
         fun <T> constant(value: (Context) -> T): Computation<T> {
-            return fromFlow { context -> flow { value(context) } }
+            return fromFlow { context -> flowOf(value(context)) }
         }
     }
 }
