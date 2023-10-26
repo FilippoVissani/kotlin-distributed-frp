@@ -1,40 +1,36 @@
 package io.github.filippovissani.kotlin_distributed_frp
 
-import io.github.filippovissani.kotlin_distributed_dfrp.Context
-import io.github.filippovissani.kotlin_distributed_dfrp.DeviceID
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
+import io.github.filippovissani.kotlin_distributed_dfrp.*
 import io.kotest.common.runBlocking
-import kotlinx.coroutines.flow.onCompletion
 import kotlin.test.*
 
 class SemanticsSpec {
+
+    private val selfID = DeviceID(1)
+    private val context = Context(selfID)
+
     @Test
     fun constant(){
         runBlocking {
             val value = 10
-            val context = Context(DeviceID(1))
             Semantics
                 .constant(value)
                 .run(emptyList(), context)
-                .onCompletion { cause -> println("Flow completed with $cause") }
                 .collect{ export ->
-                    println("######")
-                    println(export)
-                    println("######")
+                    assertEquals(export, ExportTree(value))
                 }
         }
     }
 
     @Test
-    fun selfIDTest(){
+    fun selfID(){
         runBlocking {
-            val context = Context(DeviceID(1))
-            selfID().run(emptyList(), context).collect{export ->
-                println("######")
-                println(export)
-                println("######")
-            }
+            Semantics
+                .selfID()
+                .run(emptyList(), context)
+                .collect{export ->
+                    assertEquals(export, ExportTree(selfID))
+                }
         }
     }
 }
