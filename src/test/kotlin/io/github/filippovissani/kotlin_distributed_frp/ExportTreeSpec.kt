@@ -3,22 +3,26 @@ package io.github.filippovissani.kotlin_distributed_frp
 import io.github.filippovissani.kotlin_distributed_dfrp.ExportTree
 import io.github.filippovissani.kotlin_distributed_dfrp.Key
 import io.github.filippovissani.kotlin_distributed_dfrp.Slot
-import io.kotest.core.spec.style.FreeSpec
-import io.kotest.matchers.be
-import io.kotest.matchers.should
+import kotlin.test.*
 
-class ExportTreeSpec : FreeSpec({
-    "An export tree" - {
-        "should have the given root" {
-            ExportTree(1).root should be (1)
-        }
-
-        "should have the given children" {
-            val children: Sequence<Pair<Slot, ExportTree<*>>> = sequenceOf(
-                Pair(Key("a"), ExportTree(10)),
-                Pair(Key("b"), ExportTree(20)),
-            )
-            ExportTree(1, children).children should be (children.toMap())
-        }
+class ExportTreeSpec {
+    @Test
+    fun root(){
+        assertEquals(ExportTree(1).root, 1)
     }
-})
+
+    @Test
+    fun children(){
+        val children: Sequence<Pair<Slot, ExportTree<*>>> = sequenceOf(
+            Pair(Key("a"), ExportTree(10)),
+            Pair(Key("b"), ExportTree(20)),
+        )
+        assertEquals(ExportTree(1, children).children, children.toMap())
+    }
+
+    @Test
+    fun traversable(){
+        val exp = ExportTree(1)
+        assertEquals(exp.followPath(emptyList()), exp)
+    }
+}
