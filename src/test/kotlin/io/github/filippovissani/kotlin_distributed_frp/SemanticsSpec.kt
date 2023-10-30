@@ -33,8 +33,8 @@ class SemanticsSpec : FreeSpec({
         "should be a constant flow with the given value" {
             runBlocking {
                 val value = 10
-                val computation = constant(value)
-                computation
+                val program = constant(value)
+                program
                     .run(path, context)
                     .collect{ export ->
                         export shouldBe ExportTree(value)
@@ -46,8 +46,8 @@ class SemanticsSpec : FreeSpec({
     "The selfID construct" - {
         "should be a constant flow with the device ID" {
             runBlocking {
-                val computation = selfID()
-                computation
+                val program = selfID()
+                program
                     .run(path, context)
                     .collect{export ->
                         export shouldBe ExportTree(selfID)
@@ -59,8 +59,8 @@ class SemanticsSpec : FreeSpec({
     "The branch construct" - {
         "should include only the 'then' branch when the condition is true" {
             runBlocking {
-                val computation = branch(constant(true), constant(thenValue), constant(elseValue))
-                computation.run(path, context).collect{ export ->
+                val program = branch(constant(true), constant(thenValue), constant(elseValue))
+                program.run(path, context).collect{ export ->
                     assertEquals(export, ExportTree(thenValue, sequenceOf(Condition to ExportTree(true), Then to ExportTree(thenValue))))
                 }
             }
@@ -68,8 +68,8 @@ class SemanticsSpec : FreeSpec({
 
         "should include only the 'else' branch when the condition is false" {
             runBlocking {
-                val computation = branch(constant(false), constant(thenValue), constant(elseValue))
-                computation.run(path, context).collect{ export ->
+                val program = branch(constant(false), constant(thenValue), constant(elseValue))
+                program.run(path, context).collect{ export ->
                     assertEquals(export, ExportTree(elseValue, sequenceOf(Condition to ExportTree(false), Else to ExportTree(elseValue))))
                 }
             }
@@ -78,8 +78,8 @@ class SemanticsSpec : FreeSpec({
         "should react to changes in the condition" {
             runBlocking {
                 val condition = MutableStateFlow(true)
-                val computation = branch(Computation.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
-                val exports = computation.run(path, context)
+                val program = branch(Computation.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
+                val exports = program.run(path, context)
                 condition.emit(false)
                 exports.take(1).collectLatest{ export ->
                     export.root shouldBe elseValue
@@ -90,8 +90,8 @@ class SemanticsSpec : FreeSpec({
         "should react to changes in the selected branch" {
             runBlocking {
                 val thenBranch = MutableStateFlow(thenValue)
-                val computation = branch(constant(true), Computation.fromFlow { thenBranch }, constant(elseValue))
-                val exports = computation.run(path, context)
+                val program = branch(constant(true), Computation.fromFlow { thenBranch }, constant(elseValue))
+                val exports = program.run(path, context)
                 val newValue = 100
                 thenBranch.emit(newValue)
                 exports.take(1).collectLatest{ export ->
