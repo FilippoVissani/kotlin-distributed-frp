@@ -7,7 +7,6 @@ import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.*
 import kotlin.test.*
 
