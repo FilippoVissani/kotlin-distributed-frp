@@ -7,9 +7,8 @@ import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.*
 import kotlin.test.*
 
 class SemanticsSpec : FreeSpec({
@@ -78,11 +77,15 @@ class SemanticsSpec : FreeSpec({
         }
 
         "should react to changes in the condition" {
-            val condition = flowOf(true).map { _ -> false }
-            val computation = branch(Computation.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
-            val exports = computation.run(path, context)
-            exports.collectLatest { export ->
-                export.root shouldBe elseValue }
+            runBlocking {
+                val condition = MutableStateFlow(true)
+                val computation = branch(Computation.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
+                val exports = computation.run(path, context)
+                condition.emit(false)
+                exports.take(1).collectLatest{ export ->
+                    export.root shouldBe elseValue
+                }
+            }
         }
     }
 })
