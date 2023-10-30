@@ -4,12 +4,12 @@ interface Slot
 
 data class Operand(val index: Int) : Slot
 
-class Neighbour : Slot
+object Neighbour : Slot
 
-class Condition : Slot
+object Condition : Slot
 
-class Then : Slot
+object Then : Slot
 
-class Else : Slot
+object Else : Slot
 
 data class Key<T>(val value: T) : Slot
