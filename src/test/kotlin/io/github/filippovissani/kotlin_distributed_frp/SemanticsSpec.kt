@@ -87,5 +87,18 @@ class SemanticsSpec : FreeSpec({
                 }
             }
         }
+
+        "should react to changes in the selected branch" {
+            runBlocking {
+                val thenBranch = MutableStateFlow(thenValue)
+                val computation = branch(constant(true), Computation.fromFlow { thenBranch }, constant(elseValue))
+                val exports = computation.run(path, context)
+                val newValue = 100
+                thenBranch.emit(newValue)
+                exports.take(1).collectLatest{ export ->
+                    export.root shouldBe newValue
+                }
+            }
+        }
     }
 })
