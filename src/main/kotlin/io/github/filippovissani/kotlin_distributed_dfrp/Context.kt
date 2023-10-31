@@ -3,6 +3,7 @@ package io.github.filippovissani.kotlin_distributed_dfrp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 
 interface Context {
@@ -13,7 +14,7 @@ interface Context {
     fun receiveExport(neighborID: DeviceID, exported: Export<*>)
 
     companion object{
-        operator fun invoke(selfID: DeviceID = DeviceID()
+        operator fun invoke(selfID: DeviceID
         ): Context{
             return ContextImpl(selfID)
         }
@@ -26,7 +27,7 @@ internal class ContextImpl(override val selfID: DeviceID) : Context {
 
     override fun receiveExport(neighborID: DeviceID, exported: Export<*>) {
         runBlocking {
-            _neighboursStates.emit(mapOf(neighborID to exported))
+            _neighboursStates.update { it.plus(neighborID to exported) }
         }
     }
 }
