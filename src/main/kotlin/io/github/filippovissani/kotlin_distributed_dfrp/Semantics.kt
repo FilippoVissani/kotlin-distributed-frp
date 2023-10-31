@@ -30,7 +30,7 @@ object Semantics : Language {
             val neighboringValues = alignWithNeighbors(alignmentPath, context){ export, _ -> export?.root as T }
             computation.run(path, context).zip(neighboringValues){ e, n ->
                 val neighbourField = n.plus(context.selfID to e.root)
-                ExportTree(neighbourField, sequenceOf(Neighbour to e))
+                ExportTree(neighbourField, listOf(Neighbour to e))
             }
         }
     }
@@ -43,7 +43,7 @@ object Semantics : Language {
             combine(conditionExport, thenExport, elseExport){ c, t, e ->
                 val selected = if (c.root) t else e
                 val selectedSlot = if (c.root) Then else Else
-                ExportTree(selected.root, sequenceOf(Condition to c, selectedSlot to selected))
+                ExportTree(selected.root, listOf(Condition to c, selectedSlot to selected))
             }
         }
     }
