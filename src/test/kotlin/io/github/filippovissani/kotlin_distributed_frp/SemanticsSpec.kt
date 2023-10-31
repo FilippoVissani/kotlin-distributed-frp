@@ -3,6 +3,7 @@ package io.github.filippovissani.kotlin_distributed_frp
 import io.github.filippovissani.kotlin_distributed_dfrp.*
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.branch
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.constant
+import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.neighbour
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
@@ -18,13 +19,11 @@ class SemanticsSpec : FreeSpec({
     val thenValue = 1
     val elseValue = 2
 
-    fun runFlowOnNeighbors(computation: Computation<Any>, neighbors: Iterable<DeviceID> = neighbours) {
+    fun runProgramOnNeighbours(selfContext: Context, computation: Computation<*>, neighbors: Iterable<DeviceID> = neighbours) {
         runBlocking {
             neighbors.forEach{ neighbour ->
                 val neighbourContext = Context(neighbour)
-                computation.run(path, neighbourContext).collect{ export ->
-                    context.receiveExport(neighbour, export)
-                }
+                selfContext.receiveExport(neighbour, computation.run(path, neighbourContext).last())
             }
         }
     }
@@ -61,7 +60,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val program = branch(constant(true), constant(thenValue), constant(elseValue))
                 program.run(path, context).collect{ export ->
-                    assertEquals(export, ExportTree(thenValue, sequenceOf(Condition to ExportTree(true), Then to ExportTree(thenValue))))
+                    assertEquals(export, ExportTree(thenValue, listOf(Condition to ExportTree(true), Then to ExportTree(thenValue))))
                 }
             }
         }
@@ -70,7 +69,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val program = branch(constant(false), constant(thenValue), constant(elseValue))
                 program.run(path, context).collect{ export ->
-                    assertEquals(export, ExportTree(elseValue, sequenceOf(Condition to ExportTree(false), Else to ExportTree(elseValue))))
+                    assertEquals(export, ExportTree(elseValue, listOf(Condition to ExportTree(false), Else to ExportTree(elseValue))))
                 }
             }
         }
@@ -96,6 +95,21 @@ class SemanticsSpec : FreeSpec({
                 thenBranch.emit(newValue)
                 exports.take(1).collectLatest{ export ->
                     export.root shouldBe newValue
+                }
+            }
+        }
+    }
+    
+    "The neighbour construct" - {
+        "should collect values from aligned neighbors" {
+            runBlocking {
+                val program = branch(Computation.fromFlow { ctx ->
+                    flowOf(ctx.selfID.id < 3)
+                }, neighbour(selfID()), neighbour(constant(DeviceID(0))))
+                runProgramOnNeighbours(context, program)
+                val expectedNeighborField = neighbours.filter { it.id < 3 }.associateWith { it }
+                program.run(path, context).collect{ export ->
+                    println(export.followPath(listOf(Then))?.root)
                 }
             }
         }
