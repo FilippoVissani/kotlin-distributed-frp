@@ -12,9 +12,9 @@ import kotlinx.coroutines.flow.*
 import kotlin.test.*
 
 class SemanticsSpec : FreeSpec({
-    val selfID = DeviceID(1)
+    val selfID = 1
     val context = Context(selfID)
-    val neighbours = setOf(DeviceID(1), DeviceID(2), DeviceID(3), DeviceID(4))
+    val neighbours = setOf(1, 2, 3, 4)
     val path = emptyList<Nothing>()
     val thenValue = 1
     val elseValue = 2
@@ -103,11 +103,9 @@ class SemanticsSpec : FreeSpec({
     "The neighbour construct" - {
         "should collect values from aligned neighbors" {
             runBlocking {
-                val program = branch(Computation.fromFlow { ctx ->
-                    flowOf(ctx.selfID.id < 3)
-                }, neighbour(selfID()), neighbour(constant(DeviceID(0))))
+                val program = branch(Computation.fromFlow { ctx -> flowOf(ctx.selfID < 3) }, neighbour(selfID()), neighbour(constant(0)))
                 runProgramOnNeighbours(context, program)
-                val expectedNeighborField = neighbours.filter { it.id < 3 }.associateWith { it }
+                val expectedNeighborField = neighbours.filter { it < 3 }.associateWith { it }
                 println(expectedNeighborField)
                 program.run(path, context).collect{ export ->
                     println(export.followPath(listOf(Then))?.root)
