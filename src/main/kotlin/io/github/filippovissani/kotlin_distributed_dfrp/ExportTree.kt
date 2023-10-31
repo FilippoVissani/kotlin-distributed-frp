@@ -1,20 +1,28 @@
 package io.github.filippovissani.kotlin_distributed_dfrp
 
-interface ExportTree<T> {
-    val root: T
+data class ExportTree<T>(val root: T, val children: List<Pair<Slot, ExportTree<*>>> = emptyList()) {
+    private val indentAmount = "  "
 
-    val children: Map<Slot, ExportTree<*>>
-    fun followPath(path: List<Slot>): ExportTree<*>?
-
-    companion object {
-        operator fun <T> invoke(root: T, children: Sequence<Pair<Slot, ExportTree<*>>> = emptySequence()): ExportTree<T> = ExportTreeImpl(root, children.toMap())
-    }
-}
-
-internal data class ExportTreeImpl<T>(override val root: T, override val children: Map<Slot, ExportTree<*>>) :
-    ExportTree<T> {
-    override fun followPath(path: List<Slot>): ExportTree<*>? = when {
-            path.isNotEmpty() -> children[path.first()]?.followPath(path.drop(1))
+    fun followPath(path: List<Slot>): ExportTree<*>? = when {
+            path.isNotEmpty() -> followPath(path.drop(1))
             else -> this
         }
+
+    override fun toString(): String {
+        val sb = StringBuilder()
+        format("", sb)
+        return sb.toString()
+    }
+
+    private fun format(indent: String, sb: StringBuilder){
+        sb.append("[").append(root).append("]\n")
+        if (children.toMap().isNotEmpty()) {
+            sb.append(indent).append("{\n")
+            children.toMap().forEach { (k, v) ->
+                sb.append(indent).append(indentAmount).append(k).append(" => ")
+                v.format(indent + indentAmount, sb)
+            }
+            sb.append(indent).append("}\n")
+        }
+    }
 }
