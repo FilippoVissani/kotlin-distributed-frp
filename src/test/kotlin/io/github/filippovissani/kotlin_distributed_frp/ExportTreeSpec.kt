@@ -13,11 +13,11 @@ class ExportTreeSpec {
 
     @Test
     fun children(){
-        val children: Sequence<Pair<Slot, ExportTree<*>>> = sequenceOf(
+        val children: List<Pair<Slot, ExportTree<*>>> = listOf(
             Pair(Key("a"), ExportTree(10)),
             Pair(Key("b"), ExportTree(20)),
         )
-        assertEquals(ExportTree(1, children).children, children.toMap())
+        assertEquals(ExportTree(1, children).children, children)
     }
 
     @Test
