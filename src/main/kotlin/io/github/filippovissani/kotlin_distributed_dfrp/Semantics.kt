@@ -7,13 +7,13 @@ import kotlinx.coroutines.flow.zip
 
 object Semantics : Language {
 
-    private fun <T> alignWithNeighbors(path: Path, context: Context, extract: (Export<*>?, NeighbourState) -> T): Flow<Map<DeviceID, T>> {
-        fun alignWith(neighbourID: DeviceID, neighbourState: NeighbourState): Pair<DeviceID, T> {
-            val alignedExport = neighbourState.exported.followPath(path)
-            return Pair(neighbourID, extract(alignedExport, neighbourState))
+    private fun <T> alignWithNeighbors(path: Path, context: Context, extract: (Export<*>?) -> T): Flow<Map<DeviceID, T>> {
+        fun alignWith(neighbourID: DeviceID, export: Export<*>): Pair<DeviceID, T> {
+            val alignedExport = export.followPath(path)
+            return Pair(neighbourID, extract(alignedExport))
         }
 
-        return context.neighboursStates.map { neighbours -> neighbours.map { alignWith(it.key, it.value) }.toMap() }
+        return context.neighbours.map { neighbours -> neighbours.map { alignWith(it.key, it.value) }.toMap() }
     }
 
     override fun selfID(): Computation<DeviceID> {
@@ -27,7 +27,7 @@ object Semantics : Language {
     override fun <T> neighbour(computation: Computation<T>): Computation<NeighbourField<T>> {
         return Computation.of{ context, path ->
             val alignmentPath = path + Neighbour
-            val neighboringValues = alignWithNeighbors(alignmentPath, context){ export, _ -> export?.root as T }
+            val neighboringValues = alignWithNeighbors(alignmentPath, context){ export -> export?.root as T }
             computation.run(path, context).zip(neighboringValues){ e, n ->
                 val neighbourField = n.plus(context.selfID to e.root)
                 ExportTree(neighbourField, listOf(Neighbour to e))
