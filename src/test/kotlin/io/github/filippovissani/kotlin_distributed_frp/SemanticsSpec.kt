@@ -108,6 +108,7 @@ class SemanticsSpec : FreeSpec({
                 }, neighbour(selfID()), neighbour(constant(DeviceID(0))))
                 runProgramOnNeighbours(context, program)
                 val expectedNeighborField = neighbours.filter { it.id < 3 }.associateWith { it }
+                println(expectedNeighborField)
                 program.run(path, context).collect{ export ->
                     println(export.followPath(listOf(Then))?.root)
                 }
