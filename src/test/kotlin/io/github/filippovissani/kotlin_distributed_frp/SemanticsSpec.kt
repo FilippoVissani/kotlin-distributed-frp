@@ -3,7 +3,6 @@ package io.github.filippovissani.kotlin_distributed_frp
 import io.github.filippovissani.kotlin_distributed_dfrp.*
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.branch
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.constant
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.loop
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.neighbour
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
 import io.kotest.common.runBlocking
@@ -20,11 +19,11 @@ class SemanticsSpec : FreeSpec({
     val thenValue = 1
     val elseValue = 2
 
-    fun runProgramOnNeighbours(computation: Computation<*>, neighbors: Iterable<DeviceID> = neighbours) {
+    fun runProgramOnNeighbours(aggregateExpression: AggregateExpression<*>, neighbors: Iterable<DeviceID> = neighbours) {
         runBlocking {
             neighbors.forEach{ neighbour ->
                 val neighbourContext = Context(neighbour)
-                selfContext.receiveExport(neighbour, computation.run(path, neighbourContext).last())
+                selfContext.receiveExport(neighbour, aggregateExpression.run(path, neighbourContext).last())
             }
         }
     }
@@ -78,7 +77,7 @@ class SemanticsSpec : FreeSpec({
         "should react to changes in the condition" {
             runBlocking {
                 val condition = MutableStateFlow(true)
-                val program = branch(Computation.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
+                val program = branch(AggregateExpression.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
                 val exports = program.run(path, selfContext)
                 condition.emit(false)
                 exports.take(1).collectLatest{ export ->
@@ -90,7 +89,7 @@ class SemanticsSpec : FreeSpec({
         "should react to changes in the selected branch" {
             runBlocking {
                 val thenBranch = MutableStateFlow(thenValue)
-                val program = branch(constant(true), Computation.fromFlow { thenBranch }, constant(elseValue))
+                val program = branch(constant(true), AggregateExpression.fromFlow { thenBranch }, constant(elseValue))
                 val exports = program.run(path, selfContext)
                 val newValue = 100
                 thenBranch.emit(newValue)
@@ -104,7 +103,7 @@ class SemanticsSpec : FreeSpec({
     "The neighbour construct" - {
         "should collect values from aligned neighbors" {
             runBlocking {
-                val program = branch(Computation.fromFlow { ctx -> flowOf(ctx.selfID < 3) }, neighbour(selfID()), neighbour(constant(0)))
+                val program = branch(AggregateExpression.fromFlow { ctx -> flowOf(ctx.selfID < 3) }, neighbour(selfID()), neighbour(constant(0)))
                 runProgramOnNeighbours(program)
                 val expectedNeighborField = neighbours.associateWith { if (it < 3) it else null  }
                 program.run(path, selfContext).collect{ export ->

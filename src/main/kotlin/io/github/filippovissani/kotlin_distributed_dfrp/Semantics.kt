@@ -16,27 +16,27 @@ object Semantics : Language {
         return context.neighbours.map { neighbours -> neighbours.map { alignWith(it.key, it.value) }.toMap() }
     }
 
-    override fun selfID(): Computation<DeviceID> {
-        return Computation.constant { context -> context.selfID }
+    override fun selfID(): AggregateExpression<DeviceID> {
+        return AggregateExpression.constant { context -> context.selfID }
     }
 
-    override fun <T> constant(value: T): Computation<T> {
-        return Computation.constant { _ -> value }
+    override fun <T> constant(value: T): AggregateExpression<T> {
+        return AggregateExpression.constant { _ -> value }
     }
 
-    override fun <T> neighbour(computation: Computation<T>): Computation<NeighbourField<T>> {
-        return Computation.of{ context, path ->
+    override fun <T> neighbour(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighbourField<T>> {
+        return AggregateExpression.of{ context, path ->
             val alignmentPath = path + Neighbour
             val neighboringValues = alignWithNeighbors(alignmentPath, context){ export -> export?.root as T }
-            computation.run(path, context).zip(neighboringValues){ e, n ->
+            aggregateExpression.run(path, context).zip(neighboringValues){ e, n ->
                 val neighbourField = n.plus(context.selfID to e.root)
                 ExportTree(neighbourField, mapOf(Neighbour to e))
             }
         }
     }
 
-    override fun <T> branch(condition: Computation<Boolean>, th: Computation<T>, el: Computation<T>): Computation<T> {
-        return Computation.of{ context, path ->
+    override fun <T> branch(condition: AggregateExpression<Boolean>, th: AggregateExpression<T>, el: AggregateExpression<T>): AggregateExpression<T> {
+        return AggregateExpression.of{ context, path ->
             val conditionExport = condition.run(path.plus(Condition), context)
             val thenExport = th.run(path.plus(Then), context)
             val elseExport = el.run(path.plus(Else), context)
@@ -48,8 +48,8 @@ object Semantics : Language {
         }
     }
 
-    override fun <T : Any> loop(initial: T, f: (Computation<T>) -> Computation<T>): Computation<T> {
-        return Computation.of{ context, path ->
+    override fun <T : Any> loop(initial: T, f: (AggregateExpression<T>) -> AggregateExpression<T>): AggregateExpression<T> {
+        return AggregateExpression.of{ context, path ->
             val previous = context
                 .neighbours
                 .map { neighbours ->
@@ -60,7 +60,7 @@ object Semantics : Language {
                         ExportTree(initial)
                     }
             }
-            f(Computation.of { _, _ -> previous }).run(path, context)
+            f(AggregateExpression.of { _, _ -> previous }).run(path, context)
         }
     }
 }
