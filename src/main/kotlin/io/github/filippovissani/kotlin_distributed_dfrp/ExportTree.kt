@@ -1,10 +1,10 @@
 package io.github.filippovissani.kotlin_distributed_dfrp
 
-data class ExportTree<T>(val root: T, val children: List<Pair<Slot, ExportTree<*>>> = emptyList()) {
+data class ExportTree<T>(val root: T, val children: Map<Slot, ExportTree<*>> = emptyMap()) {
     private val indentAmount = "  "
 
     fun followPath(path: List<Slot>): ExportTree<*>? = when {
-            path.isNotEmpty() -> followPath(path.drop(1))
+            path.isNotEmpty() -> children[path.first()]?.followPath(path.drop(1))
             else -> this
         }
 
