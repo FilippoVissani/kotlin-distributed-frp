@@ -104,7 +104,7 @@ class SemanticsSpec : FreeSpec({
     "The neighbour construct" - {
         "should collect values from aligned neighbors" {
             runBlocking {
-                val program = branch(AggregateExpression.fromFlow { ctx -> flowOf(ctx.selfID < 3) }, neighbour(selfID()), neighbour(constant(0)))
+                val program = branch(selfID().map { it < 3 }, neighbour(selfID()), neighbour(constant(0)))
                 runProgramOnNeighbours(program)
                 val expectedNeighborField = neighbours.associateWith { if (it < 3) it else null  }
                 program.compute(path, selfContext).collect{ export ->
@@ -117,11 +117,18 @@ class SemanticsSpec : FreeSpec({
     "The loop construct" - {
         "should return a self-dependant flow" {
             runBlocking {
-                val program = loop(0){ _ ->
-                    constant(1)
+                val program = loop(0){ expression ->
+                    expression.map {
+                        println(it)
+                        val result = it + 1
+                        println(result)
+                        result
+                    }
                 }
                 val export = program.compute(path, selfContext)
-                println(export.last().root)
+                export.collect{ e ->
+                    println(e)
+                }
             }
         }
     }
