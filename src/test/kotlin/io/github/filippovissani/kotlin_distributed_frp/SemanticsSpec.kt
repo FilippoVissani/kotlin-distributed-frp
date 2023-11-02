@@ -3,6 +3,7 @@ package io.github.filippovissani.kotlin_distributed_frp
 import io.github.filippovissani.kotlin_distributed_dfrp.*
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.branch
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.constant
+import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.loop
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.neighbour
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
 import io.kotest.common.runBlocking
@@ -110,6 +111,11 @@ class SemanticsSpec : FreeSpec({
                     export.followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbour to ExportTree(selfID)))
                 }
             }
+        }
+    }
+
+    "The loop construct" - {
+        "should return a self-dependant flow" {
         }
     }
 })
