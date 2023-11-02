@@ -23,7 +23,7 @@ class SemanticsSpec : FreeSpec({
         runBlocking {
             neighbors.forEach{ neighbour ->
                 val neighbourContext = Context(neighbour)
-                selfContext.receiveExport(neighbour, aggregateExpression.run(path, neighbourContext).last())
+                selfContext.receiveExport(neighbour, aggregateExpression.compute(path, neighbourContext).last())
             }
         }
     }
@@ -34,7 +34,7 @@ class SemanticsSpec : FreeSpec({
                 val value = 10
                 val program = constant(value)
                 program
-                    .run(path, selfContext)
+                    .compute(path, selfContext)
                     .collect{ export ->
                         export shouldBe ExportTree(value)
                     }
@@ -47,7 +47,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val program = selfID()
                 program
-                    .run(path, selfContext)
+                    .compute(path, selfContext)
                     .collect{export ->
                         export shouldBe ExportTree(selfID)
                     }
@@ -59,7 +59,7 @@ class SemanticsSpec : FreeSpec({
         "should include only the 'then' branch when the condition is true" {
             runBlocking {
                 val program = branch(constant(true), constant(thenValue), constant(elseValue))
-                program.run(path, selfContext).collect{ export ->
+                program.compute(path, selfContext).collect{ export ->
                     assertEquals(export, ExportTree(thenValue, mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue))))
                 }
             }
@@ -68,7 +68,7 @@ class SemanticsSpec : FreeSpec({
         "should include only the 'else' branch when the condition is false" {
             runBlocking {
                 val program = branch(constant(false), constant(thenValue), constant(elseValue))
-                program.run(path, selfContext).collect{ export ->
+                program.compute(path, selfContext).collect{ export ->
                     assertEquals(export, ExportTree(elseValue, mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue))))
                 }
             }
@@ -78,7 +78,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val condition = MutableStateFlow(true)
                 val program = branch(AggregateExpression.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
-                val exports = program.run(path, selfContext)
+                val exports = program.compute(path, selfContext)
                 condition.emit(false)
                 exports.take(1).collectLatest{ export ->
                     export.root shouldBe elseValue
@@ -90,7 +90,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val thenBranch = MutableStateFlow(thenValue)
                 val program = branch(constant(true), AggregateExpression.fromFlow { thenBranch }, constant(elseValue))
-                val exports = program.run(path, selfContext)
+                val exports = program.compute(path, selfContext)
                 val newValue = 100
                 thenBranch.emit(newValue)
                 exports.take(1).collectLatest{ export ->
@@ -106,7 +106,7 @@ class SemanticsSpec : FreeSpec({
                 val program = branch(AggregateExpression.fromFlow { ctx -> flowOf(ctx.selfID < 3) }, neighbour(selfID()), neighbour(constant(0)))
                 runProgramOnNeighbours(program)
                 val expectedNeighborField = neighbours.associateWith { if (it < 3) it else null  }
-                program.run(path, selfContext).collect{ export ->
+                program.compute(path, selfContext).collect{ export ->
                     export.followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbour to ExportTree(selfID)))
                 }
             }

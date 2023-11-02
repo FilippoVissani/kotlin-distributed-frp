@@ -28,7 +28,7 @@ object Semantics : Language {
         return AggregateExpression.of{ context, path ->
             val alignmentPath = path + Neighbour
             val neighboringValues = alignWithNeighbors(alignmentPath, context){ export -> export?.root as T }
-            aggregateExpression.run(path, context).zip(neighboringValues){ e, n ->
+            aggregateExpression.compute(path, context).zip(neighboringValues){ e, n ->
                 val neighbourField = n.plus(context.selfID to e.root)
                 ExportTree(neighbourField, mapOf(Neighbour to e))
             }
@@ -37,9 +37,9 @@ object Semantics : Language {
 
     override fun <T> branch(condition: AggregateExpression<Boolean>, th: AggregateExpression<T>, el: AggregateExpression<T>): AggregateExpression<T> {
         return AggregateExpression.of{ context, path ->
-            val conditionExport = condition.run(path.plus(Condition), context)
-            val thenExport = th.run(path.plus(Then), context)
-            val elseExport = el.run(path.plus(Else), context)
+            val conditionExport = condition.compute(path.plus(Condition), context)
+            val thenExport = th.compute(path.plus(Then), context)
+            val elseExport = el.compute(path.plus(Else), context)
             combine(conditionExport, thenExport, elseExport){ c, t, e ->
                 val selected = if (c.root) t else e
                 val selectedSlot = if (c.root) Then else Else
@@ -60,7 +60,7 @@ object Semantics : Language {
                         ExportTree(initial)
                     }
             }
-            f(AggregateExpression.of { _, _ -> previous }).run(path, context)
+            f(AggregateExpression.of { _, _ -> previous }).compute(path, context)
         }
     }
 }
