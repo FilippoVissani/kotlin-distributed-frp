@@ -8,12 +8,12 @@ typealias Export<T> = ExportTree<T>
 typealias NeighbourField<T> = Map<DeviceID, T>
 
 interface AggregateExpression<T>{
-    fun run(path: Path, context: Context): Flow<Export<T>>
+    fun compute(path: Path, context: Context): Flow<Export<T>>
 
     companion object{
         fun <T> of(f: (Context, Path) -> Flow<Export<T>>): AggregateExpression<T> {
             return object : AggregateExpression<T> {
-                override fun run(path: Path, context: Context): Flow<Export<T>> {
+                override fun compute(path: Path, context: Context): Flow<Export<T>> {
                     return f(context, path).transform { export -> emit(export) }
                 }
             }
