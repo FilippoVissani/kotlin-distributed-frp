@@ -26,3 +26,7 @@ data class ExportTree<T>(val root: T, val children: Map<Slot, ExportTree<*>> = e
         }
     }
 }
+
+fun <T, R> ExportTree<T>.map(transform: (T) -> R): ExportTree<R> {
+    return ExportTree(transform(root), this.children)
+}

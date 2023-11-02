@@ -26,3 +26,9 @@ interface AggregateExpression<T>{
         }
     }
 }
+
+fun <T, R> AggregateExpression<T>.map(transform: (T) -> R): AggregateExpression<R> {
+    return AggregateExpression.of { context, path ->
+        this.compute(path, context).map { export -> export.map(transform) }
+    }
+}
