@@ -8,7 +8,7 @@ interface Language {
     
     fun <T> branch(condition: Computation<Boolean>, th: Computation<T>, el: Computation<T>): Computation<T>
     
-    fun <T> loop(initial: T, f: (Computation<T>) -> Computation<T>): Computation<T>
+    fun <T : Any> loop(initial: T, f: (Computation<T>) -> Computation<T>): Computation<T>
 
     fun selfID(): Computation<DeviceID>
 }
