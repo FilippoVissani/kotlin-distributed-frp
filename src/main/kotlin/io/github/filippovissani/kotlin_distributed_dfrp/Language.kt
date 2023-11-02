@@ -1,7 +1,5 @@
 package io.github.filippovissani.kotlin_distributed_dfrp
 
-import kotlinx.coroutines.flow.Flow
-
 interface Language {
     
     fun <T> constant(value: T): Computation<T>
