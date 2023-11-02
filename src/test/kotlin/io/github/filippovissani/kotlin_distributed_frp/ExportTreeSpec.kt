@@ -13,7 +13,7 @@ class ExportTreeSpec {
 
     @Test
     fun children(){
-        val children: List<Pair<Slot, ExportTree<*>>> = listOf(
+        val children: Map<Slot, ExportTree<*>> = mapOf(
             Pair(Key("a"), ExportTree(10)),
             Pair(Key("b"), ExportTree(20)),
         )

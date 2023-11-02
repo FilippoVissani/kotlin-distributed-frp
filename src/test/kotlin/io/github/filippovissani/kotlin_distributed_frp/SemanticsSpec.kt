@@ -60,7 +60,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val program = branch(constant(true), constant(thenValue), constant(elseValue))
                 program.run(path, context).collect{ export ->
-                    assertEquals(export, ExportTree(thenValue, listOf(Condition to ExportTree(true), Then to ExportTree(thenValue))))
+                    assertEquals(export, ExportTree(thenValue, mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue))))
                 }
             }
         }
@@ -69,7 +69,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val program = branch(constant(false), constant(thenValue), constant(elseValue))
                 program.run(path, context).collect{ export ->
-                    assertEquals(export, ExportTree(elseValue, listOf(Condition to ExportTree(false), Else to ExportTree(elseValue))))
+                    assertEquals(export, ExportTree(elseValue, mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue))))
                 }
             }
         }
@@ -105,10 +105,9 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val program = branch(Computation.fromFlow { ctx -> flowOf(ctx.selfID < 3) }, neighbour(selfID()), neighbour(constant(0)))
                 runProgramOnNeighbours(context, program)
-                val expectedNeighborField = neighbours.filter { it < 3 }.associateWith { it }
-                println(expectedNeighborField)
+                val expectedNeighborField = neighbours.associateWith { if (it < 3) it else null  }
                 program.run(path, context).collect{ export ->
-                    println(export.followPath(listOf(Then))?.root)
+                    export.followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbour to ExportTree(selfID)))
                 }
             }
         }
