@@ -3,6 +3,7 @@ package io.github.filippovissani.kotlin_distributed_frp
 import io.github.filippovissani.kotlin_distributed_dfrp.*
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.branch
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.constant
+import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.loop
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.neighbour
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
 import io.kotest.common.runBlocking
@@ -115,6 +116,13 @@ class SemanticsSpec : FreeSpec({
 
     "The loop construct" - {
         "should return a self-dependant flow" {
+            runBlocking {
+                val program = loop(0){ _ ->
+                    constant(1)
+                }
+                val export = program.compute(path, selfContext)
+                println(export.last().root)
+            }
         }
     }
 })
