@@ -48,7 +48,19 @@ object Semantics : Language {
         }
     }
 
-    override fun <T> loop(initial: T, f: (Computation<T>) -> Computation<T>): Computation<T> {
-        TODO("Not yet implemented")
+    override fun <T : Any> loop(initial: T, f: (Computation<T>) -> Computation<T>): Computation<T> {
+        return Computation.of{ context, path ->
+            val previous = context
+                .neighbours
+                .map { neighbours ->
+                    val x = neighbours[context.selfID]?.followPath(path)?.root as T?
+                    if(x != null){
+                        ExportTree(x)
+                    }else{
+                        ExportTree(initial)
+                    }
+            }
+            f(Computation.of { _, _ -> previous }).run(path, context)
+        }
     }
 }
