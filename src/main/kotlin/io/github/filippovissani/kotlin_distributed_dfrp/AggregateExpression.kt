@@ -1,9 +1,6 @@
 package io.github.filippovissani.kotlin_distributed_dfrp
 
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.*
 
 interface AggregateExpression<T>{
     fun compute(path: Path, context: Context): Flow<Export<T>>
@@ -12,7 +9,7 @@ interface AggregateExpression<T>{
         fun <T> of(f: (Context, Path) -> Flow<Export<T>>): AggregateExpression<T> {
             return object : AggregateExpression<T> {
                 override fun compute(path: Path, context: Context): Flow<Export<T>> {
-                    return f(context, path).transform { export -> emit(export) }
+                    return f(context, path).transform { emit(it) }
                 }
             }
         }
