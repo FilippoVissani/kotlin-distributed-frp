@@ -15,7 +15,7 @@ import kotlin.test.*
 
 class SemanticsSpec : FreeSpec({
     val selfID = 1
-    val localSensor = "sensor" to 0
+    val localSensor = "sensor" to 1
     val initialSensorsValues = mapOf(localSensor)
     val neighbours = setOf(1, 2, 3, 4)
     val path = emptyList<Nothing>()
@@ -122,16 +122,31 @@ class SemanticsSpec : FreeSpec({
     "The loop construct" - {
         "should return a self-dependant flow" {
             runBlocking {
-                val selfContext = Context(selfID)
-                val program = loop(0){ it.map { x -> x + 1 } }
+                val selfContext = Context(selfID, initialSensorsValues)
+                val program = loop(0){ value -> combine(value, sense<Int>(localSensor.first)){ x, y -> x + y } }
                 val export = program.compute(path, selfContext)
-                export.first().root shouldBe 1
+                export.first().root shouldBe localSensor.second
             }
+        }
+
+        "should react to updates in its past state" {
+            val selfContext = Context(selfID, initialSensorsValues)
+            val program = loop(0){ value -> combine(value, sense<Int>(localSensor.first)){ x, y -> x + y } }
+            val export = program.compute(path, selfContext)
+            selfContext.receiveExport(selfID, export.first())
+            export.first().root shouldBe localSensor.second + 1
+            selfContext.receiveExport(selfID, export.first())
+            export.first().root shouldBe localSensor.second + 2
         }
 
         "should react to updates in dependencies in the looping function" {
             runBlocking {
-
+                val selfContext = Context(selfID, initialSensorsValues)
+                val program = loop(0){ value -> combine(value, sense<Int>(localSensor.first)){ x, y -> x + y } }
+                val export = program.compute(path, selfContext)
+                val newValue = 1
+                selfContext.updateLocalSensor(localSensor.first, newValue)
+                export.first().root shouldBe 1
             }
         }
     }
