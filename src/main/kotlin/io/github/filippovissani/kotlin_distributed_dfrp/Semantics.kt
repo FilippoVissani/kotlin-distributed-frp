@@ -3,7 +3,6 @@ package io.github.filippovissani.kotlin_distributed_dfrp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.zip
 
 object Semantics : Language {
 
@@ -28,7 +27,7 @@ object Semantics : Language {
         return AggregateExpression.of{ context, path ->
             val alignmentPath = path + Neighbour
             val neighboringValues = alignWithNeighbors(alignmentPath, context){ export -> export?.root as T }
-            aggregateExpression.compute(path, context).zip(neighboringValues){ export, values ->
+            combine(aggregateExpression.compute(path, context), neighboringValues){ export, values ->
                 val neighbourField = values.plus(context.selfID to export.root)
                 ExportTree(neighbourField, mapOf(Neighbour to export))
             }
