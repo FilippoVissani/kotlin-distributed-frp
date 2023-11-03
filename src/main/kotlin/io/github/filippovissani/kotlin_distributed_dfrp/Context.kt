@@ -8,7 +8,7 @@ interface Context {
 
     val neighbours: Flow<Map<DeviceID, Export<*>>>
 
-    fun <T> sensor(sensorID: SensorID): StateFlow<T>
+    fun <T> sensor(sensorID: SensorID): Flow<T>
 
     fun receiveExport(neighborID: DeviceID, exported: Export<*>)
 
@@ -38,7 +38,7 @@ internal class ContextImpl(override val selfID: DeviceID, sensors: Map<SensorID,
         }
     }
 
-    override fun <T> sensor(sensorID: SensorID): StateFlow<T> {
-        return _sensorsStates[sensorID]?.asStateFlow() as StateFlow<T>
+    override fun <T> sensor(sensorID: SensorID): Flow<T> {
+        return _sensorsStates[sensorID]?.asStateFlow() as Flow<T>
     }
 }
