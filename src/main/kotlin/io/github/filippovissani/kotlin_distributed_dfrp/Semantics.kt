@@ -28,9 +28,9 @@ object Semantics : Language {
         return AggregateExpression.of{ context, path ->
             val alignmentPath = path + Neighbour
             val neighboringValues = alignWithNeighbors(alignmentPath, context){ export -> export?.root as T }
-            aggregateExpression.compute(path, context).zip(neighboringValues){ e, n ->
-                val neighbourField = n.plus(context.selfID to e.root)
-                ExportTree(neighbourField, mapOf(Neighbour to e))
+            aggregateExpression.compute(path, context).zip(neighboringValues){ export, values ->
+                val neighbourField = values.plus(context.selfID to export.root)
+                ExportTree(neighbourField, mapOf(Neighbour to export))
             }
         }
     }
@@ -50,17 +50,11 @@ object Semantics : Language {
 
     override fun <T : Any> loop(initial: T, f: (AggregateExpression<T>) -> AggregateExpression<T>): AggregateExpression<T> {
         return AggregateExpression.of{ context, path ->
-            val previous = context
-                .neighbours
-                .map { neighbours ->
-                    val x = neighbours[context.selfID]?.followPath(path)?.root as T?
-                    if(x != null){
-                        ExportTree(x)
-                    }else{
-                        ExportTree(initial)
-                    }
+            val previousExport = context.neighbours.map { neighbours ->
+                    val previousValue = neighbours[context.selfID]?.followPath(path)?.root as T?
+                    if(previousValue != null) ExportTree(previousValue) else ExportTree(initial)
             }
-            f(AggregateExpression.of { _, _ -> previous }).compute(path, context)
+            f(AggregateExpression.of { _, _ -> previousExport }).compute(path, context)
         }
     }
 }
