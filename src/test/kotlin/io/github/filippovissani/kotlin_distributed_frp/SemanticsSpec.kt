@@ -130,13 +130,15 @@ class SemanticsSpec : FreeSpec({
         }
 
         "should react to updates in its past state" {
-            val selfContext = Context(selfID, initialSensorsValues)
-            val program = loop(0){ value -> combine(value, sense<Int>(localSensor.first)){ x, y -> x + y } }
-            val export = program.compute(path, selfContext)
-            selfContext.receiveExport(selfID, export.first())
-            export.first().root shouldBe localSensor.second + 1
-            selfContext.receiveExport(selfID, export.first())
-            export.first().root shouldBe localSensor.second + 2
+            runBlocking {
+                val selfContext = Context(selfID, initialSensorsValues)
+                val program = loop(0){ value -> combine(value, sense<Int>(localSensor.first)){ x, y -> x + y } }
+                val export = program.compute(path, selfContext)
+                selfContext.receiveExport(selfID, export.first())
+                export.first().root shouldBe localSensor.second + 1
+                selfContext.receiveExport(selfID, export.first())
+                export.first().root shouldBe localSensor.second + 2
+            }
         }
 
         "should react to updates in dependencies in the looping function" {
