@@ -6,6 +6,7 @@ import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.constant
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.loop
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.neighbour
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
+import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.sense
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -14,6 +15,8 @@ import kotlin.test.*
 
 class SemanticsSpec : FreeSpec({
     val selfID = 1
+    val localSensor = "sensor" to 0
+    val initialSensorsValues = mapOf(localSensor)
     val neighbours = setOf(1, 2, 3, 4)
     val path = emptyList<Nothing>()
     val thenValue = 1
@@ -123,6 +126,32 @@ class SemanticsSpec : FreeSpec({
                 val program = loop(0){ it.map { x -> x + 1 } }
                 val export = program.compute(path, selfContext)
                 export.first().root shouldBe 1
+            }
+        }
+
+        "should react to updates in dependencies in the looping function" {
+            runBlocking {
+
+            }
+        }
+    }
+
+    "The sense construct" - {
+        "should evaluate to the initial sensor value" {
+            runBlocking {
+                val selfContext = Context(selfID, initialSensorsValues)
+                val program = sense<Int>(localSensor.first)
+                program.compute(path, selfContext).first().root shouldBe localSensor.second
+            }
+        }
+
+        "should react to sensor changes" {
+            runBlocking {
+                val selfContext = Context(selfID, initialSensorsValues)
+                val program = sense<Int>(localSensor.first)
+                val newValue = 10
+                selfContext.updateLocalSensor(localSensor.first, newValue)
+                program.compute(path, selfContext).first().root shouldBe newValue
             }
         }
     }
