@@ -56,4 +56,8 @@ object Semantics : Language {
             f(AggregateExpression.of { _, _ -> previousExport }).compute(path, context)
         }
     }
+
+    override fun <T> sense(sensorID: SensorID): AggregateExpression<T> {
+        return AggregateExpression.fromFlow { context -> context.sensor(sensorID) }
+    }
 }

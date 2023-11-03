@@ -11,4 +11,6 @@ interface Language {
     fun <T : Any> loop(initial: T, f: (AggregateExpression<T>) -> AggregateExpression<T>): AggregateExpression<T>
 
     fun selfID(): AggregateExpression<DeviceID>
+
+    fun <T> sense(sensorID: SensorID): AggregateExpression<T>
 }
