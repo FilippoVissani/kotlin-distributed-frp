@@ -87,7 +87,7 @@ class SemanticsSpec : FreeSpec({
                 val condition = MutableStateFlow(true)
                 val program = branch(AggregateExpression.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
                 val exports = program.compute(path, selfContext)
-                condition.emit(false)
+                condition.update { false }
                 exports.first().root shouldBe elseValue
             }
         }
