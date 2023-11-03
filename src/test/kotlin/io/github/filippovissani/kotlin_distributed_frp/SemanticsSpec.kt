@@ -25,7 +25,7 @@ class SemanticsSpec : FreeSpec({
     fun runProgramOnNeighbours(selfContext: Context, aggregateExpression: AggregateExpression<*>, neighbors: Iterable<DeviceID> = neighbours) {
         runBlocking {
             neighbors.forEach{ neighbour ->
-                val neighbourContext = Context(neighbour)
+                val neighbourContext = Context(neighbour, initialSensorsValues)
                 selfContext.receiveExport(neighbour, aggregateExpression.compute(path, neighbourContext).first())
             }
         }
@@ -115,6 +115,16 @@ class SemanticsSpec : FreeSpec({
                 runProgramOnNeighbours(selfContext, program)
                 val expectedNeighborField = neighbours.associateWith { if (it < 3) it else null  }
                 program.compute(path, selfContext).first().followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbour to ExportTree(selfID)))
+            }
+        }
+
+        "should react to changes in the neighborhood state" {
+            runBlocking {
+                val selfContext = Context(selfID, initialSensorsValues)
+                val program = neighbour(sense<Int>(localSensor.first))
+                val export = program.compute(path, selfContext)
+                runProgramOnNeighbours(selfContext, program)
+                export.first().root shouldBe neighbours.associateWith { localSensor.second }
             }
         }
     }
