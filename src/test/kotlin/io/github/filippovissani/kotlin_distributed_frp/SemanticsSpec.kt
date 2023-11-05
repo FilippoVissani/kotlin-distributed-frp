@@ -15,18 +15,20 @@ import kotlin.test.*
 
 class SemanticsSpec : FreeSpec({
     val selfID = 1
-    val localSensor = "sensor" to 1
-    val initialSensorsValues = mapOf(localSensor)
+    val localSensor = "sensor"
+    val localSensorValue = 1
+    val initialSensorsValues = mapOf(localSensor to localSensorValue)
     val neighbours = setOf(1, 2, 3, 4)
     val path = emptyList<Nothing>()
     val thenValue = 1
     val elseValue = 2
+    fun selfContext() = Context(selfID, initialSensorsValues)
+    fun neighboursContexts() = neighbours.map { Context(it, initialSensorsValues) }
 
-    fun runProgramOnNeighbours(selfContext: Context, aggregateExpression: AggregateExpression<*>, neighbors: Iterable<DeviceID> = neighbours) {
+    fun runProgramOnNetwork(selfContext: Context, neighbors: Iterable<Context>, aggregateExpression: AggregateExpression<*>) {
         runBlocking {
             neighbors.forEach{ neighbour ->
-                val neighbourContext = Context(neighbour, initialSensorsValues)
-                selfContext.receiveExport(neighbour, aggregateExpression.compute(path, neighbourContext).first())
+                selfContext.receiveExport(neighbour.selfID, aggregateExpression.compute(path, neighbour).first())
             }
         }
     }
@@ -34,14 +36,11 @@ class SemanticsSpec : FreeSpec({
     "The constant construct" - {
         "should be a constant flow with the given value" {
             runBlocking {
-                val selfContext = Context(selfID)
+                val selfContext = selfContext()
                 val value = 10
                 val program = constant(value)
-                program
-                    .compute(path, selfContext)
-                    .collect{ export ->
-                        export shouldBe ExportTree(value)
-                    }
+                val exports = program.compute(path, selfContext)
+                exports.first().root shouldBe value
             }
         }
     }
@@ -49,13 +48,10 @@ class SemanticsSpec : FreeSpec({
     "The selfID construct" - {
         "should be a constant flow with the device ID" {
             runBlocking {
-                val selfContext = Context(selfID)
+                val selfContext = selfContext()
                 val program = selfID()
-                program
-                    .compute(path, selfContext)
-                    .collect{export ->
-                        export shouldBe ExportTree(selfID)
-                    }
+                val exports = program.compute(path, selfContext)
+                exports.first().root shouldBe selfID
             }
         }
     }
@@ -63,27 +59,25 @@ class SemanticsSpec : FreeSpec({
     "The branch construct" - {
         "should include only the 'then' branch when the condition is true" {
             runBlocking {
-                val selfContext = Context(selfID)
+                val selfContext = selfContext()
                 val program = branch(constant(true), constant(thenValue), constant(elseValue))
-                program.compute(path, selfContext).collect{ export ->
-                    assertEquals(export, ExportTree(thenValue, mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue))))
-                }
+                val exports = program.compute(path, selfContext)
+                exports.first() shouldBe ExportTree(thenValue, mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue)))
             }
         }
 
         "should include only the 'else' branch when the condition is false" {
             runBlocking {
-                val selfContext = Context(selfID)
+                val selfContext = selfContext()
                 val program = branch(constant(false), constant(thenValue), constant(elseValue))
-                program.compute(path, selfContext).collect{ export ->
-                    assertEquals(export, ExportTree(elseValue, mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue))))
-                }
+                val exports = program.compute(path, selfContext)
+                exports.first() shouldBe ExportTree(elseValue, mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue)))
             }
         }
 
         "should react to changes in the condition" {
             runBlocking {
-                val selfContext = Context(selfID)
+                val selfContext = selfContext()
                 val condition = MutableStateFlow(true)
                 val program = branch(AggregateExpression.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
                 val exports = program.compute(path, selfContext)
@@ -94,37 +88,38 @@ class SemanticsSpec : FreeSpec({
 
         "should react to changes in the selected branch" {
             runBlocking {
-                val selfContext = Context(selfID)
+                val selfContext = selfContext()
                 val thenBranch = MutableStateFlow(thenValue)
                 val program = branch(constant(true), AggregateExpression.fromFlow { thenBranch }, constant(elseValue))
                 val exports = program.compute(path, selfContext)
                 val newValue = 100
-                thenBranch.emit(newValue)
-                exports.take(1).collectLatest{ export ->
-                    export.root shouldBe newValue
-                }
+                thenBranch.update { newValue }
+                exports.first().root shouldBe newValue
             }
         }
     }
-    
+
     "The neighbour construct" - {
         "should collect values from aligned neighbors" {
             runBlocking {
-                val selfContext = Context(selfID)
+                val selfContext = selfContext()
+                val neighboursContexts = neighboursContexts()
                 val program = branch(selfID().map { it < 3 }, neighbour(selfID()), neighbour(constant(0)))
-                runProgramOnNeighbours(selfContext, program)
+                val exports = program.compute(path, selfContext)
+                runProgramOnNetwork(selfContext, neighboursContexts, program)
                 val expectedNeighborField = neighbours.associateWith { if (it < 3) it else null  }
-                program.compute(path, selfContext).first().followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbour to ExportTree(selfID)))
+                exports.first().followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbour to ExportTree(selfID)))
             }
         }
 
         "should react to changes in the neighborhood state" {
             runBlocking {
-                val selfContext = Context(selfID, initialSensorsValues)
-                val program = neighbour(sense<Int>(localSensor.first))
+                val selfContext = selfContext()
+                val neighboursContexts = neighboursContexts()
+                val program = neighbour(sense<Int>(localSensor))
                 val export = program.compute(path, selfContext)
-                runProgramOnNeighbours(selfContext, program)
-                export.first().root shouldBe neighbours.associateWith { localSensor.second }
+                runProgramOnNetwork(selfContext, neighboursContexts, program)
+                export.first().root shouldBe neighbours.associateWith { localSensorValue }
             }
         }
     }
@@ -132,33 +127,33 @@ class SemanticsSpec : FreeSpec({
     "The loop construct" - {
         "should return a self-dependant flow" {
             runBlocking {
-                val selfContext = Context(selfID, initialSensorsValues)
-                val program = loop(0){ value -> combine(value, sense<Int>(localSensor.first)){ x, y -> x + y } }
+                val selfContext = selfContext()
+                val program = loop(0){ value -> combine(value, sense<Int>(localSensor)){ x, y -> x + y } }
                 val export = program.compute(path, selfContext)
-                export.first().root shouldBe localSensor.second
+                export.first().root shouldBe localSensorValue
             }
         }
 
         "should react to updates in its past state" {
             runBlocking {
-                val selfContext = Context(selfID, initialSensorsValues)
-                val program = loop(0){ value -> combine(value, sense<Int>(localSensor.first)){ x, y -> x + y } }
+                val selfContext = selfContext()
+                val program = loop(0){ value -> combine(value, sense<Int>(localSensor)){ x, y -> x + y } }
                 val export = program.compute(path, selfContext)
                 selfContext.receiveExport(selfID, export.first())
-                export.first().root shouldBe localSensor.second + 1
+                export.first().root shouldBe localSensorValue + 1
                 selfContext.receiveExport(selfID, export.first())
-                export.first().root shouldBe localSensor.second + 2
+                export.first().root shouldBe localSensorValue + 2
             }
         }
 
         "should react to updates in dependencies in the looping function" {
             runBlocking {
-                val selfContext = Context(selfID, initialSensorsValues)
-                val program = loop(0){ value -> combine(value, sense<Int>(localSensor.first)){ x, y -> x + y } }
+                val selfContext = selfContext()
+                val program = loop(0){ value -> combine(value, sense<Int>(localSensor)){ x, y -> x + y } }
                 val export = program.compute(path, selfContext)
-                val newValue = 1
-                selfContext.updateLocalSensor(localSensor.first, newValue)
-                export.first().root shouldBe 1
+                val newValue = 10
+                selfContext.updateLocalSensor(localSensor, newValue)
+                export.first().root shouldBe newValue
             }
         }
     }
@@ -166,19 +161,21 @@ class SemanticsSpec : FreeSpec({
     "The sense construct" - {
         "should evaluate to the initial sensor value" {
             runBlocking {
-                val selfContext = Context(selfID, initialSensorsValues)
-                val program = sense<Int>(localSensor.first)
-                program.compute(path, selfContext).first().root shouldBe localSensor.second
+                val selfContext = selfContext()
+                val program = sense<Int>(localSensor)
+                val export = program.compute(path, selfContext)
+                export.first().root shouldBe localSensorValue
             }
         }
 
         "should react to sensor changes" {
             runBlocking {
-                val selfContext = Context(selfID, initialSensorsValues)
-                val program = sense<Int>(localSensor.first)
+                val selfContext = selfContext()
+                val program = sense<Int>(localSensor)
+                val export = program.compute(path, selfContext)
                 val newValue = 10
-                selfContext.updateLocalSensor(localSensor.first, newValue)
-                program.compute(path, selfContext).first().root shouldBe newValue
+                selfContext.updateLocalSensor(localSensor, newValue)
+                export.first().root shouldBe newValue
             }
         }
     }
