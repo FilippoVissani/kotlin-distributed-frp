@@ -1,12 +1,13 @@
 package io.github.filippovissani.kotlin_distributed_frp
 
 import io.github.filippovissani.kotlin_distributed_dfrp.core.*
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.branch
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.constant
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.loop
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.neighbor
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.selfID
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.sense
+import io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.map
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.branch
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.constant
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.loop
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.neighbor
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.selfID
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.sense
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -129,7 +130,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val selfContext = selfContext()
                 val program = loop(0){ value ->
-                    io.github.filippovissani.kotlin_distributed_dfrp.core.combine(
+                    io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.combine(
                         value,
                         sense<Int>(localSensor)
                     ) { x, y -> x + y }
@@ -143,7 +144,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val selfContext = selfContext()
                 val program = loop(0){ value ->
-                    io.github.filippovissani.kotlin_distributed_dfrp.core.combine(
+                    io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.combine(
                         value,
                         sense<Int>(localSensor)
                     ) { x, y -> x + y }
@@ -160,7 +161,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val selfContext = selfContext()
                 val program = loop(0){ value ->
-                    io.github.filippovissani.kotlin_distributed_dfrp.core.combine(
+                    io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.combine(
                         value,
                         sense<Int>(localSensor)
                     ) { x, y -> x + y }
