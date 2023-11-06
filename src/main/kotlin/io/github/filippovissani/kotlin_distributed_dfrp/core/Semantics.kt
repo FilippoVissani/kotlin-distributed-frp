@@ -1,4 +1,4 @@
-package io.github.filippovissani.kotlin_distributed_dfrp
+package io.github.filippovissani.kotlin_distributed_dfrp.core
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -24,10 +24,10 @@ object Semantics : Language {
     }
 
     override fun <T> neighbor(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighborField<T>> {
-        return AggregateExpression.of{ context, path ->
+        return AggregateExpression.of { context, path ->
             val alignmentPath = path + Neighbor
-            val neighboringValues = alignWithNeighbors(alignmentPath, context){ export -> export?.root as T }
-            combine(aggregateExpression.compute(path, context), neighboringValues){ export, values ->
+            val neighboringValues = alignWithNeighbors(alignmentPath, context) { export -> export?.root as T }
+            combine(aggregateExpression.compute(path, context), neighboringValues) { export, values ->
                 val neighborField = values.plus(context.selfID to export.root)
                 ExportTree(neighborField, mapOf(Neighbor to export))
             }
@@ -35,11 +35,11 @@ object Semantics : Language {
     }
 
     override fun <T> branch(condition: AggregateExpression<Boolean>, th: AggregateExpression<T>, el: AggregateExpression<T>): AggregateExpression<T> {
-        return AggregateExpression.of{ context, path ->
+        return AggregateExpression.of { context, path ->
             val conditionExport = condition.compute(path.plus(Condition), context)
             val thenExport = th.compute(path.plus(Then), context)
             val elseExport = el.compute(path.plus(Else), context)
-            combine(conditionExport, thenExport, elseExport){ c, t, e ->
+            combine(conditionExport, thenExport, elseExport) { c, t, e ->
                 val selected = if (c.root) t else e
                 val selectedSlot = if (c.root) Then else Else
                 ExportTree(selected.root, mapOf(Condition to c, selectedSlot to selected))
@@ -48,10 +48,10 @@ object Semantics : Language {
     }
 
     override fun <T : Any> loop(initial: T, f: (AggregateExpression<T>) -> AggregateExpression<T>): AggregateExpression<T> {
-        return AggregateExpression.of{ context, path ->
+        return AggregateExpression.of { context, path ->
             val previousExport = context.neighbors.map { neighbors ->
-                    val previousValue = neighbors[context.selfID]?.followPath(path)?.root as T?
-                    if(previousValue != null) ExportTree(previousValue) else ExportTree(initial)
+                val previousValue = neighbors[context.selfID]?.followPath(path)?.root as T?
+                if (previousValue != null) ExportTree(previousValue) else ExportTree(initial)
             }
             f(AggregateExpression.of { _, _ -> previousExport }).compute(path, context)
         }

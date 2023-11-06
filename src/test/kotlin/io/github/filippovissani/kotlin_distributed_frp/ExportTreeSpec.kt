@@ -1,8 +1,8 @@
 package io.github.filippovissani.kotlin_distributed_frp
 
-import io.github.filippovissani.kotlin_distributed_dfrp.ExportTree
-import io.github.filippovissani.kotlin_distributed_dfrp.Key
-import io.github.filippovissani.kotlin_distributed_dfrp.Slot
+import io.github.filippovissani.kotlin_distributed_dfrp.core.ExportTree
+import io.github.filippovissani.kotlin_distributed_dfrp.core.Key
+import io.github.filippovissani.kotlin_distributed_dfrp.core.Slot
 import kotlin.test.*
 
 class ExportTreeSpec {

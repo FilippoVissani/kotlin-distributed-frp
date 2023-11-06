@@ -1,4 +1,4 @@
-package io.github.filippovissani.kotlin_distributed_dfrp
+package io.github.filippovissani.kotlin_distributed_dfrp.core
 
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
@@ -15,7 +15,7 @@ interface Context {
     fun <T> updateLocalSensor(sensorID: SensorID, newValue: T)
 
     companion object{
-        operator fun invoke(selfID: DeviceID, sensors: Map<SensorID, *> = emptyMap<SensorID, Any>()): Context{
+        operator fun invoke(selfID: DeviceID, sensors: Map<SensorID, *> = emptyMap<SensorID, Any>()): Context {
             return ContextImpl(selfID, sensors)
         }
     }

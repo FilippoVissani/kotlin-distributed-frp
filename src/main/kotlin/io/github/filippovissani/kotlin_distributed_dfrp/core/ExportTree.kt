@@ -1,4 +1,4 @@
-package io.github.filippovissani.kotlin_distributed_dfrp
+package io.github.filippovissani.kotlin_distributed_dfrp.core
 
 data class ExportTree<T>(val root: T, val children: Map<Slot, ExportTree<*>> = emptyMap()) {
     private val indentAmount = "  "
