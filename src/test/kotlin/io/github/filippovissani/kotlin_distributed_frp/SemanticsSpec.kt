@@ -1,17 +1,16 @@
 package io.github.filippovissani.kotlin_distributed_frp
 
-import io.github.filippovissani.kotlin_distributed_dfrp.*
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.branch
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.constant
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.loop
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.neighbor
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.sense
+import io.github.filippovissani.kotlin_distributed_dfrp.core.*
+import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.branch
+import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.constant
+import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.loop
+import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.neighbor
+import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.selfID
+import io.github.filippovissani.kotlin_distributed_dfrp.core.Semantics.sense
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.*
-import kotlin.test.*
 
 class SemanticsSpec : FreeSpec({
     val selfID = 1
@@ -129,7 +128,12 @@ class SemanticsSpec : FreeSpec({
         "should return a self-dependant flow" {
             runBlocking {
                 val selfContext = selfContext()
-                val program = loop(0){ value -> combine(value, sense<Int>(localSensor)){ x, y -> x + y } }
+                val program = loop(0){ value ->
+                    io.github.filippovissani.kotlin_distributed_dfrp.core.combine(
+                        value,
+                        sense<Int>(localSensor)
+                    ) { x, y -> x + y }
+                }
                 val export = program.compute(path, selfContext)
                 export.first().root shouldBe localSensorValue
             }
@@ -138,7 +142,12 @@ class SemanticsSpec : FreeSpec({
         "should react to updates in its past state" {
             runBlocking {
                 val selfContext = selfContext()
-                val program = loop(0){ value -> combine(value, sense<Int>(localSensor)){ x, y -> x + y } }
+                val program = loop(0){ value ->
+                    io.github.filippovissani.kotlin_distributed_dfrp.core.combine(
+                        value,
+                        sense<Int>(localSensor)
+                    ) { x, y -> x + y }
+                }
                 val export = program.compute(path, selfContext)
                 selfContext.receiveExport(selfID, export.first())
                 export.first().root shouldBe localSensorValue + 1
@@ -150,7 +159,12 @@ class SemanticsSpec : FreeSpec({
         "should react to updates in dependencies in the looping function" {
             runBlocking {
                 val selfContext = selfContext()
-                val program = loop(0){ value -> combine(value, sense<Int>(localSensor)){ x, y -> x + y } }
+                val program = loop(0){ value ->
+                    io.github.filippovissani.kotlin_distributed_dfrp.core.combine(
+                        value,
+                        sense<Int>(localSensor)
+                    ) { x, y -> x + y }
+                }
                 val export = program.compute(path, selfContext)
                 val newValue = 10
                 selfContext.updateLocalSensor(localSensor, newValue)

@@ -1,4 +1,4 @@
-package io.github.filippovissani.kotlin_distributed_dfrp
+package io.github.filippovissani.kotlin_distributed_dfrp.core
 
 typealias DeviceID = Int
 typealias Path = List<Slot>
