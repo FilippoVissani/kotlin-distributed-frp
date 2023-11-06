@@ -104,12 +104,12 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val selfContext = selfContext()
                 val neighborsContexts = neighborsContexts()
-                val program = branch(selfID().map { it < 3 }, neighbor(selfID()), neighbor(constant(0)))
+                val constantValue = 0
+                val program = neighbor(branch(selfID().map { it < 3 }, selfID(), constant(constantValue)))
                 val exports = program.compute(path, selfContext)
                 runProgramOnNetwork(selfContext, neighborsContexts, program)
-                val expectedNeighborField = neighbors.associateWith { if (it < 3) it else null  }
-                println(exports.first().root)
-                exports.first().followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbor to ExportTree(selfID)))
+                val expectedNeighborField = neighbors.associateWith { if (it < 3) it else constantValue  }
+                exports.first().root shouldBe expectedNeighborField
             }
         }
 
