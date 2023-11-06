@@ -1,5 +1,6 @@
-package io.github.filippovissani.kotlin_distributed_dfrp.core
+package io.github.filippovissani.kotlin_distributed_dfrp.core.impl
 
+import io.github.filippovissani.kotlin_distributed_dfrp.core.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
