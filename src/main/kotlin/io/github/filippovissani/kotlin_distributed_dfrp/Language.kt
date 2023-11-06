@@ -4,7 +4,7 @@ interface Language {
     
     fun <T> constant(value: T): AggregateExpression<T>
 
-    fun <T> neighbour(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighbourField<T>>
+    fun <T> neighbor(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighborField<T>>
     
     fun <T> branch(condition: AggregateExpression<Boolean>, th: AggregateExpression<T>, el: AggregateExpression<T>): AggregateExpression<T>
     

@@ -4,7 +4,7 @@ interface Slot
 
 data class Operand(val index: Int) : Slot
 
-object Neighbour : Slot
+object Neighbor : Slot
 
 object Condition : Slot
 

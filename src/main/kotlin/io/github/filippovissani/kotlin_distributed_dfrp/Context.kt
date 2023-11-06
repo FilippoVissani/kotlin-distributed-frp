@@ -6,7 +6,7 @@ import kotlinx.coroutines.runBlocking
 interface Context {
     val selfID: DeviceID
 
-    val neighbours: Flow<Map<DeviceID, Export<*>>>
+    val neighbors: Flow<Map<DeviceID, Export<*>>>
 
     fun <T> sensor(sensorID: SensorID): Flow<T>
 
@@ -22,13 +22,13 @@ interface Context {
 }
 
 internal class ContextImpl(override val selfID: DeviceID, sensors: Map<SensorID, *>) : Context {
-    private val _neighboursStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
+    private val _neighborsStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
     private val _sensorsStates = sensors.map { (k, v) -> k to MutableStateFlow(v) }.toMap()
-    override val neighbours = _neighboursStates.asSharedFlow()
+    override val neighbors = _neighborsStates.asSharedFlow()
 
     override fun receiveExport(neighborID: DeviceID, exported: Export<*>) {
         runBlocking {
-            _neighboursStates.update { it.plus(neighborID to exported) }
+            _neighborsStates.update { it.plus(neighborID to exported) }
         }
     }
 
