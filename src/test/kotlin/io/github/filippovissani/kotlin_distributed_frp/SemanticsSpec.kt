@@ -117,9 +117,9 @@ class SemanticsSpec : FreeSpec({
                 val selfContext = selfContext()
                 val neighboursContexts = neighboursContexts()
                 val program = neighbour(sense<Int>(localSensor))
-                val export = program.compute(path, selfContext)
+                val exports = program.compute(path, selfContext)
                 runProgramOnNetwork(selfContext, neighboursContexts, program)
-                export.first().root shouldBe neighbours.associateWith { localSensorValue }
+                exports.first().root shouldBe neighbours.associateWith { localSensorValue }
             }
         }
     }
@@ -173,7 +173,10 @@ class SemanticsSpec : FreeSpec({
                 val selfContext = selfContext()
                 val program = sense<Int>(localSensor)
                 val export = program.compute(path, selfContext)
-                val newValue = 10
+                var newValue = 10
+                selfContext.updateLocalSensor(localSensor, newValue)
+                export.first().root shouldBe newValue
+                newValue = 11
                 selfContext.updateLocalSensor(localSensor, newValue)
                 export.first().root shouldBe newValue
             }
