@@ -7,12 +7,12 @@ import kotlinx.coroutines.flow.map
 object Semantics : Language {
 
     private fun <T> alignWithNeighbors(path: Path, context: Context, extract: (Export<*>?) -> T): Flow<Map<DeviceID, T>> {
-        fun alignWith(neighbourID: DeviceID, export: Export<*>): Pair<DeviceID, T> {
+        fun alignWith(neighborID: DeviceID, export: Export<*>): Pair<DeviceID, T> {
             val alignedExport = export.followPath(path)
-            return Pair(neighbourID, extract(alignedExport))
+            return Pair(neighborID, extract(alignedExport))
         }
 
-        return context.neighbours.map { neighbours -> neighbours.map { alignWith(it.key, it.value) }.toMap() }
+        return context.neighbors.map { neighbors -> neighbors.map { alignWith(it.key, it.value) }.toMap() }
     }
 
     override fun selfID(): AggregateExpression<DeviceID> {
@@ -23,13 +23,13 @@ object Semantics : Language {
         return AggregateExpression.constant { _ -> value }
     }
 
-    override fun <T> neighbour(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighbourField<T>> {
+    override fun <T> neighbor(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighborField<T>> {
         return AggregateExpression.of{ context, path ->
-            val alignmentPath = path + Neighbour
+            val alignmentPath = path + Neighbor
             val neighboringValues = alignWithNeighbors(alignmentPath, context){ export -> export?.root as T }
             combine(aggregateExpression.compute(path, context), neighboringValues){ export, values ->
-                val neighbourField = values.plus(context.selfID to export.root)
-                ExportTree(neighbourField, mapOf(Neighbour to export))
+                val neighborField = values.plus(context.selfID to export.root)
+                ExportTree(neighborField, mapOf(Neighbor to export))
             }
         }
     }
@@ -49,8 +49,8 @@ object Semantics : Language {
 
     override fun <T : Any> loop(initial: T, f: (AggregateExpression<T>) -> AggregateExpression<T>): AggregateExpression<T> {
         return AggregateExpression.of{ context, path ->
-            val previousExport = context.neighbours.map { neighbours ->
-                    val previousValue = neighbours[context.selfID]?.followPath(path)?.root as T?
+            val previousExport = context.neighbors.map { neighbors ->
+                    val previousValue = neighbors[context.selfID]?.followPath(path)?.root as T?
                     if(previousValue != null) ExportTree(previousValue) else ExportTree(initial)
             }
             f(AggregateExpression.of { _, _ -> previousExport }).compute(path, context)

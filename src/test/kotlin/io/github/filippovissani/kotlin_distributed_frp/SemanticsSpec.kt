@@ -4,7 +4,7 @@ import io.github.filippovissani.kotlin_distributed_dfrp.*
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.branch
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.constant
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.loop
-import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.neighbour
+import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.neighbor
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.selfID
 import io.github.filippovissani.kotlin_distributed_dfrp.Semantics.sense
 import io.kotest.common.runBlocking
@@ -18,17 +18,17 @@ class SemanticsSpec : FreeSpec({
     val localSensor = "sensor"
     val localSensorValue = 1
     val initialSensorsValues = mapOf(localSensor to localSensorValue)
-    val neighbours = setOf(1, 2, 3, 4)
+    val neighbors = setOf(1, 2, 3, 4)
     val path = emptyList<Nothing>()
     val thenValue = 1
     val elseValue = 2
     fun selfContext() = Context(selfID, initialSensorsValues)
-    fun neighboursContexts() = neighbours.map { Context(it, initialSensorsValues) }
+    fun neighborsContexts() = neighbors.map { Context(it, initialSensorsValues) }
 
     fun runProgramOnNetwork(selfContext: Context, neighbors: Iterable<Context>, aggregateExpression: AggregateExpression<*>) {
         runBlocking {
-            neighbors.forEach{ neighbour ->
-                selfContext.receiveExport(neighbour.selfID, aggregateExpression.compute(path, neighbour).first())
+            neighbors.forEach{ neighbor ->
+                selfContext.receiveExport(neighbor.selfID, aggregateExpression.compute(path, neighbor).first())
             }
         }
     }
@@ -99,27 +99,28 @@ class SemanticsSpec : FreeSpec({
         }
     }
 
-    "The neighbour construct" - {
+    "The neighbor construct" - {
         "should collect values from aligned neighbors" {
             runBlocking {
                 val selfContext = selfContext()
-                val neighboursContexts = neighboursContexts()
-                val program = branch(selfID().map { it < 3 }, neighbour(selfID()), neighbour(constant(0)))
+                val neighborsContexts = neighborsContexts()
+                val program = branch(selfID().map { it < 3 }, neighbor(selfID()), neighbor(constant(0)))
                 val exports = program.compute(path, selfContext)
-                runProgramOnNetwork(selfContext, neighboursContexts, program)
-                val expectedNeighborField = neighbours.associateWith { if (it < 3) it else null  }
-                exports.first().followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbour to ExportTree(selfID)))
+                runProgramOnNetwork(selfContext, neighborsContexts, program)
+                val expectedNeighborField = neighbors.associateWith { if (it < 3) it else null  }
+                println(exports.first().root)
+                exports.first().followPath(listOf(Then)) shouldBe ExportTree(expectedNeighborField, mapOf(Neighbor to ExportTree(selfID)))
             }
         }
 
         "should react to changes in the neighborhood state" {
             runBlocking {
                 val selfContext = selfContext()
-                val neighboursContexts = neighboursContexts()
-                val program = neighbour(sense<Int>(localSensor))
+                val neighborsContexts = neighborsContexts()
+                val program = neighbor(sense<Int>(localSensor))
                 val exports = program.compute(path, selfContext)
-                runProgramOnNetwork(selfContext, neighboursContexts, program)
-                exports.first().root shouldBe neighbours.associateWith { localSensorValue }
+                runProgramOnNetwork(selfContext, neighborsContexts, program)
+                exports.first().root shouldBe neighbors.associateWith { localSensorValue }
             }
         }
     }
