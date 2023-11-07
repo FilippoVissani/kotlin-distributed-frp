@@ -5,6 +5,7 @@ import io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.map
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.branch
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.constant
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.loop
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.mux
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.neighbor
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.selfID
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.sense
@@ -195,6 +196,28 @@ class SemanticsSpec : FreeSpec({
                 newValue = 11
                 selfContext.updateLocalSensor(localSensor, newValue)
                 export.first().root shouldBe newValue
+            }
+        }
+    }
+
+    "The mux construct" - {
+        "should include both branches when the condition is true" {
+            runBlocking {
+                val selfContext = selfContext()
+                val condition = true
+                val program = mux(constant(condition), constant(thenValue), constant(elseValue))
+                val export = program.compute(path, selfContext)
+                export.first() shouldBe ExportTree(thenValue, mapOf(Condition to ExportTree(condition), Then to ExportTree(thenValue), Else to ExportTree(elseValue)))
+            }
+        }
+
+        "should include both branches when the condition is false" {
+            runBlocking {
+                val selfContext = selfContext()
+                val condition = false
+                val program = mux(constant(condition), constant(thenValue), constant(elseValue))
+                val export = program.compute(path, selfContext)
+                export.first() shouldBe ExportTree(elseValue, mapOf(Condition to ExportTree(condition), Then to ExportTree(thenValue), Else to ExportTree(elseValue)))
             }
         }
     }
