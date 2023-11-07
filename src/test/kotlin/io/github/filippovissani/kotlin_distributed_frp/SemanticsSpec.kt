@@ -2,12 +2,13 @@ package io.github.filippovissani.kotlin_distributed_frp
 
 import io.github.filippovissani.kotlin_distributed_dfrp.core.*
 import io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.map
+import io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.combine
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.branch
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.constant
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.loop
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.mux
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.neighbor
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.selfID
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.neighbor
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.constant
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.mux
+import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.loop
 import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.sense
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
@@ -17,7 +18,7 @@ import kotlinx.coroutines.flow.*
 class SemanticsSpec : FreeSpec({
     val selfID = 1
     val localSensor = "sensor"
-    val localSensorValue = 1
+    val localSensorValue = 15
     val initialSensorsValues = mapOf(localSensor to localSensorValue)
     val neighbors = setOf(1, 2, 3, 4)
     val path = emptyList<Nothing>()
@@ -131,7 +132,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val selfContext = selfContext()
                 val program = loop(0){ value ->
-                    io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.combine(
+                    combine(
                         value,
                         sense<Int>(localSensor)
                     ) { x, y -> x + y }
@@ -145,16 +146,16 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val selfContext = selfContext()
                 val program = loop(0){ value ->
-                    io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.combine(
+                    combine(
                         value,
                         sense<Int>(localSensor)
                     ) { x, y -> x + y }
                 }
                 val export = program.compute(path, selfContext)
                 selfContext.receiveExport(selfID, export.first())
-                export.first().root shouldBe localSensorValue + 1
+                export.first().root shouldBe localSensorValue * 2
                 selfContext.receiveExport(selfID, export.first())
-                export.first().root shouldBe localSensorValue + 2
+                export.first().root shouldBe localSensorValue * 3
             }
         }
 
@@ -162,7 +163,7 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val selfContext = selfContext()
                 val program = loop(0){ value ->
-                    io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.combine(
+                    combine(
                         value,
                         sense<Int>(localSensor)
                     ) { x, y -> x + y }
