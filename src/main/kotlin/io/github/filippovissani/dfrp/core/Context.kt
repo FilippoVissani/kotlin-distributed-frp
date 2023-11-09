@@ -1,7 +1,7 @@
 package io.github.filippovissani.dfrp.core
 
 import io.github.filippovissani.dfrp.core.impl.ContextImpl
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
 
 interface Context {
     val selfID: DeviceID
@@ -14,7 +14,7 @@ interface Context {
 
     fun <T> updateLocalSensor(sensorID: SensorID, newValue: T)
 
-    companion object{
+    companion object {
         operator fun invoke(selfID: DeviceID, sensors: Map<SensorID, *> = emptyMap<SensorID, Any>()): Context {
             return ContextImpl(selfID, sensors)
         }

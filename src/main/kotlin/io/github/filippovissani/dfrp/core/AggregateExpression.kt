@@ -1,11 +1,14 @@
 package io.github.filippovissani.dfrp.core
 
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.transform
 
-interface AggregateExpression<T>{
+interface AggregateExpression<T> {
     fun compute(path: Path, context: Context): Flow<Export<T>>
 
-    companion object{
+    companion object {
         fun <T> of(f: (Context, Path) -> Flow<Export<T>>): AggregateExpression<T> {
             return object : AggregateExpression<T> {
                 override fun compute(path: Path, context: Context): Flow<Export<T>> {

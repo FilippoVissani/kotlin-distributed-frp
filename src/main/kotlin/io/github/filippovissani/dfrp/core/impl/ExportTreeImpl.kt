@@ -17,7 +17,7 @@ data class ExportTreeImpl<T>(override val root: T, override val children: Map<Sl
         return sb.toString()
     }
 
-    private fun format(indent: String, sb: StringBuilder){
+    private fun format(indent: String, sb: StringBuilder) {
         sb.append("[").append(root).append("]\n")
         if (children.toMap().isNotEmpty()) {
             sb.append(indent).append("{\n")
