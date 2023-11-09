@@ -28,7 +28,7 @@ internal class ContextImpl(override val selfID: DeviceID, sensors: Map<SensorID,
         }
     }
 
-    override fun <T> sensor(sensorID: SensorID): Flow<T> {
+    override fun <T> sense(sensorID: SensorID): Flow<T> {
         return _sensorsStates[sensorID]?.asStateFlow() as Flow<T>
     }
 }
