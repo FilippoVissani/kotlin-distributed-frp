@@ -1,9 +1,9 @@
-package io.github.filippovissani.kotlin_distributed_dfrp.core.impl
+package io.github.filippovissani.dfrp.core.impl
 
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Context
-import io.github.filippovissani.kotlin_distributed_dfrp.core.DeviceID
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Export
-import io.github.filippovissani.kotlin_distributed_dfrp.core.SensorID
+import io.github.filippovissani.dfrp.core.Context
+import io.github.filippovissani.dfrp.core.DeviceID
+import io.github.filippovissani.dfrp.core.Export
+import io.github.filippovissani.dfrp.core.SensorID
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.runBlocking
 

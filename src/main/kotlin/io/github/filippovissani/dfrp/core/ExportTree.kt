@@ -1,6 +1,6 @@
-package io.github.filippovissani.kotlin_distributed_dfrp.core
+package io.github.filippovissani.dfrp.core
 
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.ExportTreeImpl
+import io.github.filippovissani.dfrp.core.impl.ExportTreeImpl
 
 interface ExportTree<T>{
     val root: T
