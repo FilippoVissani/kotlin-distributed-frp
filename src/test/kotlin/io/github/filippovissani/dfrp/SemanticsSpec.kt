@@ -1,19 +1,26 @@
 package io.github.filippovissani.dfrp
 
-import io.github.filippovissani.dfrp.core.*
-import io.github.filippovissani.dfrp.core.extensions.map
+import io.github.filippovissani.dfrp.core.AggregateExpression
+import io.github.filippovissani.dfrp.core.Condition
+import io.github.filippovissani.dfrp.core.Context
+import io.github.filippovissani.dfrp.core.Else
+import io.github.filippovissani.dfrp.core.ExportTree
+import io.github.filippovissani.dfrp.core.Then
 import io.github.filippovissani.dfrp.core.extensions.combine
+import io.github.filippovissani.dfrp.core.extensions.map
 import io.github.filippovissani.dfrp.core.impl.Semantics.branch
-import io.github.filippovissani.dfrp.core.impl.Semantics.selfID
-import io.github.filippovissani.dfrp.core.impl.Semantics.neighbor
 import io.github.filippovissani.dfrp.core.impl.Semantics.constant
-import io.github.filippovissani.dfrp.core.impl.Semantics.mux
 import io.github.filippovissani.dfrp.core.impl.Semantics.loop
+import io.github.filippovissani.dfrp.core.impl.Semantics.mux
+import io.github.filippovissani.dfrp.core.impl.Semantics.neighbor
+import io.github.filippovissani.dfrp.core.impl.Semantics.selfID
 import io.github.filippovissani.dfrp.core.impl.Semantics.sense
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 
 class SemanticsSpec : FreeSpec({
     val selfID = 1
@@ -27,9 +34,13 @@ class SemanticsSpec : FreeSpec({
     fun selfContext() = Context(selfID, initialSensorsValues)
     fun neighborsContexts() = neighbors.map { Context(it, initialSensorsValues) }
 
-    fun runProgramOnNetwork(selfContext: Context, neighbors: Iterable<Context>, aggregateExpression: AggregateExpression<*>) {
+    fun runProgramOnNetwork(
+        selfContext: Context,
+        neighbors: Iterable<Context>,
+        aggregateExpression: AggregateExpression<*>
+    ) {
         runBlocking {
-            neighbors.forEach{ neighbor ->
+            neighbors.forEach { neighbor ->
                 selfContext.receiveExport(neighbor.selfID, aggregateExpression.compute(path, neighbor).first())
             }
         }
@@ -64,7 +75,10 @@ class SemanticsSpec : FreeSpec({
                 val selfContext = selfContext()
                 val program = branch(constant(true), constant(thenValue), constant(elseValue))
                 val exports = program.compute(path, selfContext)
-                exports.first() shouldBe ExportTree(thenValue, mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue)))
+                exports.first() shouldBe ExportTree(
+                    thenValue,
+                    mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue))
+                )
             }
         }
 
@@ -73,7 +87,10 @@ class SemanticsSpec : FreeSpec({
                 val selfContext = selfContext()
                 val program = branch(constant(false), constant(thenValue), constant(elseValue))
                 val exports = program.compute(path, selfContext)
-                exports.first() shouldBe ExportTree(elseValue, mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue)))
+                exports.first() shouldBe ExportTree(
+                    elseValue,
+                    mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue))
+                )
             }
         }
 
@@ -81,7 +98,8 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val selfContext = selfContext()
                 val condition = MutableStateFlow(true)
-                val program = branch(AggregateExpression.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
+                val program =
+                    branch(AggregateExpression.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
                 val exports = program.compute(path, selfContext)
                 condition.update { false }
                 exports.first().root shouldBe elseValue
@@ -110,7 +128,7 @@ class SemanticsSpec : FreeSpec({
                 val program = neighbor(branch(selfID().map { it < 3 }, selfID(), constant(constantValue)))
                 val exports = program.compute(path, selfContext)
                 runProgramOnNetwork(selfContext, neighborsContexts, program)
-                val expectedNeighborField = neighbors.associateWith { if (it < 3) it else constantValue  }
+                val expectedNeighborField = neighbors.associateWith { if (it < 3) it else constantValue }
                 exports.first().root shouldBe expectedNeighborField
             }
         }
@@ -131,7 +149,7 @@ class SemanticsSpec : FreeSpec({
         "should return a self-dependant flow" {
             runBlocking {
                 val selfContext = selfContext()
-                val program = loop(0){ value ->
+                val program = loop(0) { value ->
                     combine(
                         value,
                         sense<Int>(localSensor)
@@ -145,7 +163,7 @@ class SemanticsSpec : FreeSpec({
         "should react to updates in its past state" {
             runBlocking {
                 val selfContext = selfContext()
-                val program = loop(0){ value ->
+                val program = loop(0) { value ->
                     combine(
                         value,
                         sense<Int>(localSensor)
@@ -162,7 +180,7 @@ class SemanticsSpec : FreeSpec({
         "should react to updates in dependencies in the looping function" {
             runBlocking {
                 val selfContext = selfContext()
-                val program = loop(0){ value ->
+                val program = loop(0) { value ->
                     combine(
                         value,
                         sense<Int>(localSensor)
@@ -208,7 +226,14 @@ class SemanticsSpec : FreeSpec({
                 val condition = true
                 val program = mux(constant(condition), constant(thenValue), constant(elseValue))
                 val export = program.compute(path, selfContext)
-                export.first() shouldBe ExportTree(thenValue, mapOf(Condition to ExportTree(condition), Then to ExportTree(thenValue), Else to ExportTree(elseValue)))
+                export.first() shouldBe ExportTree(
+                    thenValue,
+                    mapOf(
+                        Condition to ExportTree(condition),
+                        Then to ExportTree(thenValue),
+                        Else to ExportTree(elseValue)
+                    )
+                )
             }
         }
 
@@ -218,7 +243,14 @@ class SemanticsSpec : FreeSpec({
                 val condition = false
                 val program = mux(constant(condition), constant(thenValue), constant(elseValue))
                 val export = program.compute(path, selfContext)
-                export.first() shouldBe ExportTree(elseValue, mapOf(Condition to ExportTree(condition), Then to ExportTree(thenValue), Else to ExportTree(elseValue)))
+                export.first() shouldBe ExportTree(
+                    elseValue,
+                    mapOf(
+                        Condition to ExportTree(condition),
+                        Then to ExportTree(thenValue),
+                        Else to ExportTree(elseValue)
+                    )
+                )
             }
         }
     }
