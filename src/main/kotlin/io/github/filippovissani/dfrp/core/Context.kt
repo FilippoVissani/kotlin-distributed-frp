@@ -8,7 +8,7 @@ interface Context {
 
     val neighbors: Flow<Map<DeviceID, Export<*>>>
 
-    fun <T> sensor(sensorID: SensorID): Flow<T>
+    fun <T> sense(sensorID: SensorID): Flow<T>
 
     fun receiveExport(neighborID: DeviceID, exported: Export<*>)
 

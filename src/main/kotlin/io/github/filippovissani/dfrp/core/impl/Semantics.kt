@@ -102,6 +102,6 @@ object Semantics : Language {
     }
 
     override fun <T> sense(sensorID: SensorID): AggregateExpression<T> {
-        return AggregateExpression.fromFlow { context -> context.sensor(sensorID) }
+        return AggregateExpression.fromFlow { context -> context.sense(sensorID) }
     }
 }
