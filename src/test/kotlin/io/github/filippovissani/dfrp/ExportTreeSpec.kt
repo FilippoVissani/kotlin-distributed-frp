@@ -16,7 +16,7 @@ class ExportTreeSpec {
     fun children() {
         val children: Map<Slot, ExportTree<*>> = mapOf(
             Pair(Key("a"), ExportTree(10)),
-            Pair(Key("b"), ExportTree(20)),
+            Pair(Key("b"), ExportTree(20))
         )
         assertEquals(ExportTree(1, children).children, children)
     }
