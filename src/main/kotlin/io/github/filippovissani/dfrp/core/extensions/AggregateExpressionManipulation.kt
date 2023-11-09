@@ -1,11 +1,11 @@
-package io.github.filippovissani.kotlin_distributed_dfrp.core.extensions
+package io.github.filippovissani.dfrp.core.extensions
 
-import io.github.filippovissani.kotlin_distributed_dfrp.core.AggregateExpression
-import io.github.filippovissani.kotlin_distributed_dfrp.core.ExportTree
+import io.github.filippovissani.dfrp.core.AggregateExpression
+import io.github.filippovissani.dfrp.core.ExportTree
 import kotlinx.coroutines.flow.map
 
 fun <T, R> AggregateExpression<T>.map(transform: (T) -> R): AggregateExpression<R> {
-    return AggregateExpression.of { context, path -> 
+    return AggregateExpression.of { context, path ->
         this.compute(path, context).map { export -> export.map(transform) }
     }
 }

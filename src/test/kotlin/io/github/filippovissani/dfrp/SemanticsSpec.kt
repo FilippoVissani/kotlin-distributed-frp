@@ -1,15 +1,15 @@
-package io.github.filippovissani.kotlin_distributed_frp
+package io.github.filippovissani.dfrp
 
-import io.github.filippovissani.kotlin_distributed_dfrp.core.*
-import io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.map
-import io.github.filippovissani.kotlin_distributed_dfrp.core.extensions.combine
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.branch
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.selfID
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.neighbor
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.constant
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.mux
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.loop
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.Semantics.sense
+import io.github.filippovissani.dfrp.core.*
+import io.github.filippovissani.dfrp.core.extensions.map
+import io.github.filippovissani.dfrp.core.extensions.combine
+import io.github.filippovissani.dfrp.core.impl.Semantics.branch
+import io.github.filippovissani.dfrp.core.impl.Semantics.selfID
+import io.github.filippovissani.dfrp.core.impl.Semantics.neighbor
+import io.github.filippovissani.dfrp.core.impl.Semantics.constant
+import io.github.filippovissani.dfrp.core.impl.Semantics.mux
+import io.github.filippovissani.dfrp.core.impl.Semantics.loop
+import io.github.filippovissani.dfrp.core.impl.Semantics.sense
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe

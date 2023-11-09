@@ -1,9 +1,10 @@
-package io.github.filippovissani.kotlin_distributed_frp
+package io.github.filippovissani.dfrp
 
-import io.github.filippovissani.kotlin_distributed_dfrp.core.ExportTree
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Key
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Slot
-import kotlin.test.*
+import io.github.filippovissani.dfrp.core.ExportTree
+import io.github.filippovissani.dfrp.core.Key
+import io.github.filippovissani.dfrp.core.Slot
+import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 class ExportTreeSpec {
     @Test

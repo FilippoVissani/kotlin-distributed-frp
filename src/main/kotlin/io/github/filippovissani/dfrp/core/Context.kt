@@ -1,8 +1,7 @@
-package io.github.filippovissani.kotlin_distributed_dfrp.core
+package io.github.filippovissani.dfrp.core
 
-import io.github.filippovissani.kotlin_distributed_dfrp.core.impl.ContextImpl
+import io.github.filippovissani.dfrp.core.impl.ContextImpl
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.runBlocking
 
 interface Context {
     val selfID: DeviceID

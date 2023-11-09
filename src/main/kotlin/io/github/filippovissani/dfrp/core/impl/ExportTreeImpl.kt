@@ -1,7 +1,7 @@
-package io.github.filippovissani.kotlin_distributed_dfrp.core.impl
+package io.github.filippovissani.dfrp.core.impl
 
-import io.github.filippovissani.kotlin_distributed_dfrp.core.ExportTree
-import io.github.filippovissani.kotlin_distributed_dfrp.core.Slot
+import io.github.filippovissani.dfrp.core.ExportTree
+import io.github.filippovissani.dfrp.core.Slot
 
 data class ExportTreeImpl<T>(override val root: T, override val children: Map<Slot, ExportTree<*>>) : ExportTree<T> {
     private val indentAmount = "  "

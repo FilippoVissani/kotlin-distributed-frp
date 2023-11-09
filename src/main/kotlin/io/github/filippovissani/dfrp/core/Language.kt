@@ -1,4 +1,4 @@
-package io.github.filippovissani.kotlin_distributed_dfrp.core
+package io.github.filippovissani.dfrp.core
 
 interface Language {
     
