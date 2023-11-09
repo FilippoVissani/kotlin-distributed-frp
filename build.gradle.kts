@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.taskTree)
     alias(libs.plugins.kover)
+    alias(libs.plugins.klint)
 }
 
 repositories {
