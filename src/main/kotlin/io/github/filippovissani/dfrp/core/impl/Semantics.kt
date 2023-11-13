@@ -38,7 +38,7 @@ object Semantics : Language {
         el: AggregateExpression<T>,
         combiner: (Export<Boolean>, Export<T>, Export<T>) -> Export<T>
     ): AggregateExpression<T> {
-        return AggregateExpression.of { context, path ->
+        return AggregateExpression { context, path ->
             val conditionExport = condition.compute(path.plus(Condition), context)
             val thenExport = th.compute(path.plus(Then), context)
             val elseExport = el.compute(path.plus(Else), context)
@@ -55,7 +55,7 @@ object Semantics : Language {
     }
 
     override fun <T> neighbor(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighborField<T>> {
-        return AggregateExpression.of { context, path ->
+        return AggregateExpression { context, path ->
             val alignmentPath = path + Neighbor
             val neighboringValues = alignWithNeighbors(alignmentPath, context) { export -> export?.root as T }
             combine(aggregateExpression.compute(path, context), neighboringValues) { export, values ->
@@ -92,12 +92,12 @@ object Semantics : Language {
         initial: T,
         f: (AggregateExpression<T>) -> AggregateExpression<T>
     ): AggregateExpression<T> {
-        return AggregateExpression.of { context, path ->
+        return AggregateExpression { context, path ->
             val previousExport = context.neighbors.map { neighbors ->
                 val previousValue = neighbors[context.selfID]?.followPath(path)?.root as T?
                 if (previousValue != null) ExportTree(previousValue) else ExportTree(initial)
             }
-            f(AggregateExpression.of { _, _ -> previousExport }).compute(path, context)
+            f(AggregateExpression { _, _ -> previousExport }).compute(path, context)
         }
     }
 
