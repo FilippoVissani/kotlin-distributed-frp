@@ -2,11 +2,24 @@ package io.github.filippovissani.dfrp.core.extensions
 
 import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.ExportTree
+import io.github.filippovissani.dfrp.core.NeighborField
 import kotlinx.coroutines.flow.map
 
 fun <T, R> AggregateExpression<T>.map(transform: (T) -> R): AggregateExpression<R> {
     return AggregateExpression { context, path ->
         this.compute(path, context).map { export -> export.map(transform) }
+    }
+}
+
+fun <T> AggregateExpression<NeighborField<T>>.withoutSelf(): AggregateExpression<NeighborField<T>> {
+    return AggregateExpression { context, path ->
+        this.compute(path, context).map { export -> export.map { it.minus(context.selfID) } }
+    }
+}
+
+fun AggregateExpression<NeighborField<Double>>.min(): AggregateExpression<Double> {
+    return AggregateExpression { context, path ->
+        this.compute(path, context).map { export -> export.map { it.values.min() } }
     }
 }
 
