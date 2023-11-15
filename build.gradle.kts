@@ -13,6 +13,9 @@ repositories {
 
 dependencies {
     implementation(libs.kotlinx.coroutines)
+    implementation(libs.slf4j.api)
+    implementation(libs.logback.core)
+    implementation(libs.logback.classic)
     testImplementation(libs.bundles.kotlin.testing.common)
     testImplementation(libs.kotest.runner.junit5.jvm)
 }
