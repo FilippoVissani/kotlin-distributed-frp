@@ -17,9 +17,9 @@ fun <T> AggregateExpression<NeighborField<T>>.withoutSelf(): AggregateExpression
     }
 }
 
-fun AggregateExpression<NeighborField<Double>>.min(): AggregateExpression<Double> {
+fun AggregateExpression<NeighborField<Double?>>.minOrNull(): AggregateExpression<Double?> {
     return AggregateExpression { context, path ->
-        this.compute(path, context).map { export -> export.map { it.values.min() } }
+        this.compute(path, context).map { export -> export.map { it.values.minByOrNull { x -> x != null } } }
     }
 }
 
