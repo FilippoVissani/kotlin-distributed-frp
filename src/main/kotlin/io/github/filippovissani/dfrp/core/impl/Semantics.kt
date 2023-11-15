@@ -88,7 +88,7 @@ object Semantics : Language {
         }
     }
 
-    override fun <T : Any> loop(
+    override fun <T> loop(
         initial: T,
         f: (AggregateExpression<T>) -> AggregateExpression<T>
     ): AggregateExpression<T> {
@@ -97,7 +97,7 @@ object Semantics : Language {
                 val previousValue = neighbors[context.selfID]?.followPath(path)?.root as T?
                 if (previousValue != null) ExportTree(previousValue) else ExportTree(initial)
             }
-            f(AggregateExpression { _, _ -> previousExport }).compute(path, context)
+            f(AggregateExpression { _, _ -> previousExport as Flow<Export<T>> }).compute(path, context)
         }
     }
 
