@@ -15,7 +15,7 @@ import io.github.filippovissani.dfrp.simulation.Simulation
 import io.github.filippovissani.dfrp.simulation.Simulator
 import kotlinx.coroutines.runBlocking
 
-suspend fun runGradientSimulation(environment: Environment, source: Int) {
+fun runGradientSimulation(environment: Environment, source: Int) {
     val simulation = Simulation(environment, source)
     val simulator = Simulator(simulation)
 
