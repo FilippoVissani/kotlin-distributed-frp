@@ -11,7 +11,7 @@ class Simulator(private val simulation: Simulation) {
         val exports =
             simulation.contexts.map { context -> (context.selfID to aggregateExpression.compute(emptyList(), context)) }
         exports.forEach { (id, export) ->
-            logger.debug("Device $id exported:\n${export.first()}")
+            logger.debug("($id -> ${export.first().root})")
             simulation.environment.neighbors(id).forEach { n ->
                 simulation.contexts[n].receiveExport(id, export.first())
             }
