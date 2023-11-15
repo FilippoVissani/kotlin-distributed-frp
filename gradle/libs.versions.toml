@@ -6,6 +6,8 @@ kotest = "5.8.0"
 kotlin = "1.9.20"
 kover = "0.7.4"
 klint = "11.6.1"
+slf4j = "1.7.30"
+logback = "1.2.9"
 
 [libraries]
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
@@ -16,6 +18,9 @@ kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotl
 kotlin-test-common = { module = "org.jetbrains.kotlin:kotlin-test-common", version.ref = "kotlin" }
 kotlin-test-annotations-common = { module = "org.jetbrains.kotlin:kotlin-test-annotations-common", version.ref = "kotlin" }
 kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
+logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
+logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
 
 [bundles]
 kotlin-testing-common = [
