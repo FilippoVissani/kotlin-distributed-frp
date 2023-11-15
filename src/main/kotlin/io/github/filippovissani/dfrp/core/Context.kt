@@ -10,9 +10,9 @@ interface Context {
 
     fun <T> sense(sensorID: SensorID): Flow<T>
 
-    fun receiveExport(neighborID: DeviceID, exported: Export<*>)
+    suspend fun receiveExport(neighborID: DeviceID, exported: Export<*>)
 
-    fun <T> updateLocalSensor(sensorID: SensorID, newValue: T)
+    suspend fun <T> updateLocalSensor(sensorID: SensorID, newValue: T)
 
     companion object {
         operator fun invoke(selfID: DeviceID, sensors: Map<SensorID, *> = emptyMap<SensorID, Any>()): Context {
