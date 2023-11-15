@@ -9,23 +9,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.runBlocking
 
 internal class ContextImpl(override val selfID: DeviceID, sensors: Map<SensorID, *>) : Context {
     private val _neighborsStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
     private val _sensorsStates = sensors.map { (k, v) -> k to MutableStateFlow(v) }.toMap()
     override val neighbors = _neighborsStates.asSharedFlow()
 
-    override fun receiveExport(neighborID: DeviceID, exported: Export<*>) {
-        runBlocking {
-            _neighborsStates.update { it.plus(neighborID to exported) }
-        }
+    override suspend fun receiveExport(neighborID: DeviceID, exported: Export<*>) {
+        _neighborsStates.update { it.plus(neighborID to exported) }
     }
 
-    override fun <T> updateLocalSensor(sensorID: SensorID, newValue: T) {
-        runBlocking {
-            _sensorsStates[sensorID]?.update { newValue }
-        }
+    override suspend fun <T> updateLocalSensor(sensorID: SensorID, newValue: T) {
+        _sensorsStates[sensorID]?.update { newValue }
     }
 
     override fun <T> sense(sensorID: SensorID): Flow<T> {
