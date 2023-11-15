@@ -22,7 +22,7 @@ data class ExportTreeImpl<T>(override val root: T, override val children: Map<Sl
         if (children.toMap().isNotEmpty()) {
             sb.append(indent).append("{\n")
             children.toMap().forEach { (k, v) ->
-                sb.append(indent).append(indentAmount).append(k).append(" => ")
+                sb.append(indent).append(indentAmount).append(k.javaClass.simpleName).append(" => ")
                 (v as ExportTreeImpl).format(indent + indentAmount, sb)
             }
             sb.append(indent).append("}\n")
