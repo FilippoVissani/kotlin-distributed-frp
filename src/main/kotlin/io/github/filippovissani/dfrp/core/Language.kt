@@ -18,7 +18,7 @@ interface Language {
         el: AggregateExpression<T>
     ): AggregateExpression<T>
 
-    fun <T : Any> loop(initial: T, f: (AggregateExpression<T>) -> AggregateExpression<T>): AggregateExpression<T>
+    fun <T> loop(initial: T, f: (AggregateExpression<T>) -> AggregateExpression<T>): AggregateExpression<T>
 
     fun selfID(): AggregateExpression<DeviceID>
 
