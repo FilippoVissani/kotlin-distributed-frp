@@ -1,36 +1,73 @@
 package io.github.filippovissani.dfrp
 
 import io.github.filippovissani.dfrp.core.Context
+import io.github.filippovissani.dfrp.core.DeviceID
+import io.github.filippovissani.dfrp.core.Slot
 import io.github.filippovissani.dfrp.core.aggregate
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.update
 
 class SemanticsSpec : FreeSpec({
 
-    "The selfID construct" - {
+/*    "The selfID construct" - {
         "Should be a constant flow with the device ID" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
-                contexts.forEach { it.neighbors.addAll(contexts) }
+                contexts.forEach { it.neighbors.update { contexts.toSet() } }
                 aggregate(contexts){
                     selfID()
                 }
-                println(contexts.map { it.selfExport[emptyList()]?.value })
+                contexts.forEach { context ->
+                    context.selfExports.onEach { export ->
+                        println("${context.selfID} -> ${export[emptyList()]?.value}")
+                    }.launchIn(this)
+                }
             }
         }
-    }
+    }*/
 
-    "The mux construct" - {
+/*    "The constant construct" - {
+        "Should be a constant flow with the given value" {
+            runBlocking {
+                val contexts = (0..3).map { Context(it) }
+                contexts.forEach { it.neighbors.update { contexts.toSet() } }
+                aggregate(contexts){
+                    constant(0)
+                }
+                contexts.forEach { context ->
+                    context.selfExports.onEach { export ->
+                        println("${context.selfID} -> ${export[emptyList()]?.value}")
+                    }.launchIn(this)
+                }
+            }
+        }
+    }*/
+
+    "The neighbor construct" - {
         "Should" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
-                contexts.forEach { it.neighbors.addAll(contexts) }
+                contexts.forEach { it.neighbors.update { contexts.toSet() } }
                 aggregate(contexts){
-                    mux(MutableStateFlow(selfID().value < 2), selfID(), constant(100))
+                    neighbor(constant(100))
                 }
-                val result = contexts.map { it.selfExport[emptyList()]?.value }.toList()
-                println(result)
+                contexts.forEach { context ->
+                    context.selfExports.onEach { export ->
+                        println("${context.selfID} -> ${export[listOf(Slot.Neighbor)]?.value}")
+                    }.launchIn(this)
+                }
+                contexts.forEach { context ->
+                    context.selfExports.onEach { export ->
+                        println("${context.selfID} -> ${export[emptyList()]?.value}")
+                    }.launchIn(this)
+                }
             }
         }
     }
