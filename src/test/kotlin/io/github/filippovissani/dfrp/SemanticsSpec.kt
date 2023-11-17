@@ -7,6 +7,7 @@ import io.github.filippovissani.dfrp.core.aggregate
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -16,7 +17,7 @@ import kotlinx.coroutines.flow.update
 
 class SemanticsSpec : FreeSpec({
 
-/*    "The selfID construct" - {
+    "The selfID construct" - {
         "Should be a constant flow with the device ID" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
@@ -31,9 +32,9 @@ class SemanticsSpec : FreeSpec({
                 }
             }
         }
-    }*/
+    }
 
-/*    "The constant construct" - {
+    "The constant construct" - {
         "Should be a constant flow with the given value" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
@@ -48,24 +49,24 @@ class SemanticsSpec : FreeSpec({
                 }
             }
         }
-    }*/
+    }
 
     "The neighbor construct" - {
-        "Should" {
+        "Should collect values from aligned neighbors" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
                 contexts.forEach { it.neighbors.update { contexts.toSet() } }
                 aggregate(contexts){
-                    neighbor(constant(100))
+                    neighbor(selfID())
                 }
                 contexts.forEach { context ->
                     context.selfExports.onEach { export ->
-                        println("${context.selfID} -> ${export[listOf(Slot.Neighbor)]?.value}")
-                    }.launchIn(this)
-                }
-                contexts.forEach { context ->
-                    context.selfExports.onEach { export ->
-                        println("${context.selfID} -> ${export[emptyList()]?.value}")
+                        (export[emptyList()]?.value as Map<DeviceID, SharedFlow<DeviceID>>)
+                            .entries.forEach { (k, v) ->
+                                v.onEach {
+                                    println("${context.selfID} -> ($k, $it)")
+                                }.launchIn(this)
+                            }
                     }.launchIn(this)
                 }
             }
