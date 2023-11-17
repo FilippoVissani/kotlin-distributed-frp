@@ -2,9 +2,11 @@ package io.github.filippovissani.dfrp
 
 import io.github.filippovissani.dfrp.core.Context
 import io.github.filippovissani.dfrp.core.DeviceID
+import io.github.filippovissani.dfrp.core.Slot
 import io.github.filippovissani.dfrp.core.aggregate
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -51,14 +53,16 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
                 contexts.forEach { it.neighbors.update { contexts.toSet() } }
+                val test = MutableStateFlow(100)
                 aggregate(contexts){
-                    neighbor{ selfID() }
+                    neighbor(test)
                 }
                 contexts.forEach { context ->
                     context.selfExports.onEach { export ->
-                        println(export[emptyList()])
+                        println("${context.selfID} -> $export")
                     }.launchIn(this)
                 }
+                test.update { 5000 }
             }
         }
     }
