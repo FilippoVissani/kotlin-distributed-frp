@@ -2,21 +2,15 @@ package io.github.filippovissani.dfrp
 
 import io.github.filippovissani.dfrp.core.Context
 import io.github.filippovissani.dfrp.core.DeviceID
-import io.github.filippovissani.dfrp.core.Slot
 import io.github.filippovissani.dfrp.core.aggregate
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.update
 
 class SemanticsSpec : FreeSpec({
-
     "The selfID construct" - {
         "Should be a constant flow with the device ID" {
             runBlocking {

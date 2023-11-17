@@ -3,41 +3,38 @@ package io.github.filippovissani.dfrp.core
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.update
 
 class Context(val selfID: DeviceID) {
     val neighbors: MutableStateFlow<Set<Context>> = MutableStateFlow(emptySet())
-    val selfExports: MutableStateFlow<Map<Path, StateFlow<*>>> = MutableStateFlow(emptyMap())
+    val selfExports: MutableStateFlow<Map<Path, MutableStateFlow<*>>> = MutableStateFlow(emptyMap())
     private val currentPath: MutableStateFlow<List<Slot>> = MutableStateFlow(emptyList())
 
     fun selfID(): StateFlow<DeviceID> {
-        val result = MutableStateFlow(selfID)
-        selfExports.update { it.plus(currentPath.value to result) }
-        return result.asStateFlow()
+        selfExports.update { it.plus(currentPath.value to MutableStateFlow(selfID)) }
+        return selfExports.value[currentPath.value] as StateFlow<DeviceID>
     }
 
     fun <T> constant(value: T): StateFlow<T> {
-        val result = MutableStateFlow(value)
-        selfExports.update { it.plus(currentPath.value to result) }
-        return result.asStateFlow()
+        selfExports.update { it.plus(currentPath.value to MutableStateFlow(value)) }
+        return selfExports.value[currentPath.value] as StateFlow<T>
     }
 
     fun <T> neighbor(expression: StateFlow<T>): StateFlow<Map<DeviceID, T>> {
         val oldPath = currentPath.value
         val alignmentPath = currentPath.value + Slot.Neighbor
-        val result: MutableStateFlow<Map<DeviceID, T>> = MutableStateFlow(mapOf(selfID to expression.value))
+        val neighborField: MutableStateFlow<Map<DeviceID, T>> = MutableStateFlow(emptyMap())
+        selfExports.update { it.plus(alignmentPath to expression as MutableStateFlow<T>) }
+        selfExports.update { it.plus(oldPath to neighborField) }
         neighbors.value.forEach { neighbor ->
             neighbor.selfExports.onEach { export ->
-                result.update { it.plus(neighbor.selfID to export[alignmentPath] as T) }
+                neighborField.update { it.plus(neighbor.selfID to export[alignmentPath] as T) }
             }.launchIn(GlobalScope)
         }
-        selfExports.update { it.plus(oldPath to result) }
         currentPath.update { alignmentPath }
-        selfExports.update { it.plus(alignmentPath to expression) }
-        return result
+        return neighborField
     }
 
     fun <T> branch(
