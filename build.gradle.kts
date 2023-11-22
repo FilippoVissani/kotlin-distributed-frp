@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.logback.core)
     implementation(libs.logback.classic)
+    implementation(libs.kotlin.logging.jvm)
     testImplementation(libs.bundles.kotlin.testing.common)
     testImplementation(libs.kotest.runner.junit5.jvm)
 }
