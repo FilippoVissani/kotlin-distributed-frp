@@ -1,31 +1,30 @@
 package io.github.filippovissani.dfrp
 
 import io.github.filippovissani.dfrp.core.Context
-import io.github.filippovissani.dfrp.core.DeviceID
-import io.github.filippovissani.dfrp.core.Slot
 import io.github.filippovissani.dfrp.core.aggregate
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class SemanticsSpec : FreeSpec({
-/*    "The selfID construct" - {
+
+    val logger = KotlinLogging.logger {}
+
+    "The selfID construct" - {
         "Should be a constant flow with the device ID" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
                 contexts.forEach { it.neighbors.update { contexts.toSet() } }
-                aggregate(contexts){
+                aggregate(contexts) {
                     selfID()
                 }
                 contexts.forEach { context ->
-                    context.selfExports.onEach { export ->
-                        println("${context.selfID} -> ${export[emptyList()]?.value}")
-                    }.launchIn(this)
+                    logger.info { "${context.selfID} -> ${context.selfExports.value}" }
                 }
             }
         }
@@ -36,33 +35,36 @@ class SemanticsSpec : FreeSpec({
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
                 contexts.forEach { it.neighbors.update { contexts.toSet() } }
-                aggregate(contexts){
-                    constant(0)
+                aggregate(contexts) {
+                    constant(100)
                 }
                 contexts.forEach { context ->
-                    context.selfExports.onEach { export ->
-                        println("${context.selfID} -> ${export[emptyList()]?.value}")
-                    }.launchIn(this)
+                    logger.info { "${context.selfID} -> ${context.selfExports.value}" }
                 }
             }
         }
-    }*/
+    }
 
     "The neighbor construct" - {
         "Should collect values from aligned neighbors" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
                 contexts.forEach { it.neighbors.update { contexts.toSet() } }
-                val test = MutableStateFlow(100)
-                aggregate(contexts){
-                    neighbor(test)
+                val aggregateJob = launch(Dispatchers.Default) {
+                    aggregate(contexts) {
+                        neighbor(selfID())
+                    }
                 }
-                contexts.forEach { context ->
-                    context.selfExports.onEach { export ->
-                        println("${context.selfID} -> $export")
-                    }.launchIn(this)
+                val exportsJobs = contexts.map { context ->
+                    launch(Dispatchers.Default) {
+                        context.selfExports.collect { export ->
+                            logger.info { "${context.selfID} -> $export" }
+                        }
+                    }
                 }
-                test.update { 5000 }
+                delay(1000)
+                aggregateJob.cancelAndJoin()
+                exportsJobs.forEach { it.cancelAndJoin() }
             }
         }
     }
