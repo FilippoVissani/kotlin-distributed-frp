@@ -19,7 +19,7 @@ class SemanticsSpec : FreeSpec({
         "Should be a constant flow with the device ID" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
-                contexts.forEach { it.neighbors.update { contexts.toSet() } }
+                contexts.forEach { it.neighbors = contexts.toSet() }
                 aggregate(contexts) {
                     selfID()
                 }
@@ -34,7 +34,7 @@ class SemanticsSpec : FreeSpec({
         "Should be a constant flow with the given value" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
-                contexts.forEach { it.neighbors.update { contexts.toSet() } }
+                contexts.forEach { it.neighbors = contexts.toSet() }
                 aggregate(contexts) {
                     constant(100)
                 }
@@ -49,7 +49,7 @@ class SemanticsSpec : FreeSpec({
         "Should collect values from aligned neighbors" {
             runBlocking {
                 val contexts = (0..3).map { Context(it) }
-                contexts.forEach { it.neighbors.update { contexts.toSet() } }
+                contexts.forEach { it.neighbors = contexts.toSet() }
                 val aggregateJob = launch(Dispatchers.Default) {
                     aggregate(contexts) {
                         neighbor(selfID())

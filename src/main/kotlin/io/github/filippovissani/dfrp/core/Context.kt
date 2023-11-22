@@ -15,7 +15,7 @@ typealias SensorID = String
 typealias Export<T> = Map<Path, T>
 
 class Context(val selfID: DeviceID) {
-    val neighbors: MutableStateFlow<Set<Context>> = MutableStateFlow(emptySet())
+    var neighbors: Set<Context> = emptySet()
     val selfExports: MutableStateFlow<Export<*>> = MutableStateFlow(emptyMap<Path, Any>())
     private val currentPath: MutableStateFlow<Path> = MutableStateFlow(emptyList())
 
@@ -49,7 +49,7 @@ class Context(val selfID: DeviceID) {
                 }
             }
         }
-        neighbors.value.forEach { neighbor ->
+        neighbors.forEach { neighbor ->
             launch(Dispatchers.Default) {
                 neighbor.selfExports.collect { newNeighborExport ->
                     selfExports.update { selfExport ->
