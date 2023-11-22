@@ -37,10 +37,10 @@ class Context(val selfID: DeviceID) {
         val oldPath = currentPath.value
         val alignmentPath = currentPath.value + Slot.Neighbor
         val neighborField: MutableStateFlow<Map<DeviceID, T>> = MutableStateFlow(emptyMap())
-        selfExports.update { it.plus(alignmentPath to expression.value) }
-        selfExports.update { it.plus(oldPath to mapOf(selfID to expression.value)) }
+        selfExports.update {
+            it.plus(alignmentPath to expression.value).plus(oldPath to mapOf(selfID to expression.value))
+        }
         currentPath.update { alignmentPath }
-        logger.debug { "$selfID line 43" }
         launch(Dispatchers.Default) {
             expression.collect { value ->
                 logger.debug { "$value from expression" }
@@ -49,7 +49,6 @@ class Context(val selfID: DeviceID) {
                 }
             }
         }
-        logger.debug { "$selfID line 55" }
         neighbors.value.forEach { neighbor ->
             launch(Dispatchers.Default) {
                 neighbor.selfExports.collect { newNeighborExport ->
@@ -62,7 +61,6 @@ class Context(val selfID: DeviceID) {
                 }
             }
         }
-        logger.debug { "$selfID line 68" }
         neighborField.asStateFlow()
         // TODO("update neighborField")
     }
