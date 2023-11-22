@@ -56,13 +56,14 @@ class Context(val selfID: DeviceID) {
                         logger.debug { "$selfID received: $newNeighborExport from ${neighbor.selfID}" }
                         val newValue = newNeighborExport[alignmentPath] as T
                         val actualNeighborField = selfExport[oldPath] as Map<DeviceID, T>
+                        neighborField.update { it.plus(neighbor.selfID to newValue) }
+                        logger.debug { "$selfID neighborField is ${neighborField.value}" }
                         selfExport.plus(oldPath to actualNeighborField.plus(neighbor.selfID to newValue))
                     }
                 }
             }
         }
         neighborField.asStateFlow()
-        // TODO("update neighborField")
     }
 
     fun <T> branch(
