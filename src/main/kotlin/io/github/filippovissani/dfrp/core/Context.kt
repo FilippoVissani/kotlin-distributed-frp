@@ -55,10 +55,9 @@ class Context(val selfID: DeviceID) {
                     selfExports.update { selfExport ->
                         logger.debug { "$selfID received: $newNeighborExport from ${neighbor.selfID}" }
                         val newValue = newNeighborExport[alignmentPath] as T
-                        val actualNeighborField = selfExport[oldPath] as Map<DeviceID, T>
                         neighborField.update { it.plus(neighbor.selfID to newValue) }
                         logger.debug { "$selfID neighborField is ${neighborField.value}" }
-                        selfExport.plus(oldPath to actualNeighborField.plus(neighbor.selfID to newValue))
+                        selfExport.plus(oldPath to neighborField.value)
                     }
                 }
             }
