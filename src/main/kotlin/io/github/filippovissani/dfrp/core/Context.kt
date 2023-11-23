@@ -18,7 +18,6 @@ class Context(val selfID: DeviceID) {
     var neighbors: Set<Context> = emptySet()
     val selfExports: MutableStateFlow<Export<*>> = MutableStateFlow(emptyMap<Path, Any>())
     private val currentPath: MutableStateFlow<Path> = MutableStateFlow(emptyList())
-
     private val logger = KotlinLogging.logger {}
 
     suspend fun selfID(): StateFlow<DeviceID> = coroutineScope {
@@ -36,11 +35,12 @@ class Context(val selfID: DeviceID) {
     suspend fun <T> neighbor(expression: StateFlow<T>): StateFlow<Map<DeviceID, T>> = coroutineScope {
         val oldPath = currentPath.value
         val alignmentPath = currentPath.value + Slot.Neighbor
-        val neighborField: MutableStateFlow<Map<DeviceID, T>> = MutableStateFlow(emptyMap())
-        selfExports.update {
-            it.plus(alignmentPath to expression.value).plus(oldPath to mapOf(selfID to expression.value))
-        }
+        val initialExpressionValue = expression.value
+        val neighborField: MutableStateFlow<Map<DeviceID, T>> = MutableStateFlow(mapOf(selfID to initialExpressionValue))
         currentPath.update { alignmentPath }
+        selfExports.update {
+            it.plus(alignmentPath to initialExpressionValue).plus(oldPath to neighborField.value)
+        }
         launch(Dispatchers.Default) {
             expression.collect { value ->
                 logger.debug { "$value from expression" }
@@ -52,11 +52,10 @@ class Context(val selfID: DeviceID) {
         neighbors.forEach { neighbor ->
             launch(Dispatchers.Default) {
                 neighbor.selfExports.collect { newNeighborExport ->
+                    val newValue = newNeighborExport[alignmentPath] as T
+                    neighborField.update { it.plus(neighbor.selfID to newValue) }
                     selfExports.update { selfExport ->
                         logger.debug { "$selfID received: $newNeighborExport from ${neighbor.selfID}" }
-                        val newValue = newNeighborExport[alignmentPath] as T
-                        neighborField.update { it.plus(neighbor.selfID to newValue) }
-                        logger.debug { "$selfID neighborField is ${neighborField.value}" }
                         selfExport.plus(oldPath to neighborField.value)
                     }
                 }
