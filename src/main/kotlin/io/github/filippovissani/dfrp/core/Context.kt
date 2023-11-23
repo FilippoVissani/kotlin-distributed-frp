@@ -18,7 +18,6 @@ class Context(val selfID: DeviceID) {
     var neighbors: Set<Context> = emptySet()
     val selfExports: MutableStateFlow<Export<*>> = MutableStateFlow(emptyMap<Path, Any>())
     private val currentPath: MutableStateFlow<Path> = MutableStateFlow(emptyList())
-    private val logger = KotlinLogging.logger {}
 
     suspend fun selfID(): StateFlow<DeviceID> = coroutineScope {
         val result = MutableStateFlow(selfID)
@@ -44,7 +43,6 @@ class Context(val selfID: DeviceID) {
         }
         launch(Dispatchers.Default) {
             expression.collect { value ->
-                logger.debug { "$value from expression" }
                 selfExports.update { export ->
                     export.plus(alignmentPath to value)
                 }
@@ -56,7 +54,6 @@ class Context(val selfID: DeviceID) {
                     val newValue = newNeighborExport[alignmentPath] as T
                     neighborField.update { it.plus(neighbor.selfID to newValue) }
                     selfExports.update { selfExport ->
-                        logger.debug { "$selfID received: $newNeighborExport from ${neighbor.selfID}" }
                         selfExport.plus(oldPath to neighborField.value)
                     }
                 }
@@ -122,7 +119,7 @@ class Context(val selfID: DeviceID) {
                 }
             }
         }
-        result
+        result.asStateFlow()
     }
 
     fun <T> loop(
