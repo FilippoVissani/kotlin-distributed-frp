@@ -72,12 +72,55 @@ class Context(val selfID: DeviceID) {
         TODO()
     }
 
-    fun <T> mux(
+    suspend fun <T> mux(
         condition: StateFlow<Boolean>,
         th: StateFlow<T>,
         el: StateFlow<T>
-    ): StateFlow<T> {
-        TODO()
+    ): StateFlow<T> = coroutineScope {
+        val oldPath = currentPath.value
+        val conditionPath = currentPath.value + Slot.Condition
+        val thenPath = currentPath.value + Slot.Then
+        val elsePath = currentPath.value + Slot.Else
+        val initialConditionValue = condition.value
+        val initialThenValue = th.value
+        val initialElseValue = el.value
+        val result: MutableStateFlow<T> = MutableStateFlow(if (initialConditionValue) initialThenValue else initialElseValue)
+        selfExports.update {
+            it.plus(oldPath to result.value)
+                .plus(conditionPath to initialConditionValue)
+                .plus(thenPath to initialThenValue)
+                .plus(elsePath to initialElseValue)
+        }
+        launch(Dispatchers.Default) {
+            condition.collect{ newCondition ->
+                result.update { if(newCondition) th.value else el.value }
+                selfExports.update {
+                    it.plus(conditionPath to newCondition)
+                        .plus(oldPath to if(newCondition) th.value else el.value )
+                }
+            }
+        }
+        launch(Dispatchers.Default) {
+            th.collect{ newTh ->
+                result.update { if(condition.value) newTh else el.value }
+                selfExports.update {
+                    it
+                        .plus(thenPath to newTh)
+                        .plus(oldPath to if(condition.value) newTh else el.value)
+                }
+            }
+        }
+        launch(Dispatchers.Default) {
+            el.collect{ newEl ->
+                result.update { if(condition.value) th.value else newEl }
+                selfExports.update {
+                    it
+                        .plus(elsePath to newEl)
+                        .plus(oldPath to if(condition.value) th.value else newEl)
+                }
+            }
+        }
+        result
     }
 
     fun <T> loop(
