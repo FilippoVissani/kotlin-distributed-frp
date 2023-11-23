@@ -36,7 +36,8 @@ class Context(val selfID: DeviceID) {
         val oldPath = currentPath.value
         val alignmentPath = currentPath.value + Slot.Neighbor
         val initialExpressionValue = expression.value
-        val neighborField: MutableStateFlow<Map<DeviceID, T>> = MutableStateFlow(mapOf(selfID to initialExpressionValue))
+        val neighborField: MutableStateFlow<Map<DeviceID, T>> =
+            MutableStateFlow(mapOf(selfID to initialExpressionValue))
         currentPath.update { alignmentPath }
         selfExports.update {
             it.plus(alignmentPath to initialExpressionValue).plus(oldPath to neighborField.value)
@@ -84,7 +85,8 @@ class Context(val selfID: DeviceID) {
         val initialConditionValue = condition.value
         val initialThenValue = th.value
         val initialElseValue = el.value
-        val result: MutableStateFlow<T> = MutableStateFlow(if (initialConditionValue) initialThenValue else initialElseValue)
+        val result: MutableStateFlow<T> =
+            MutableStateFlow(if (initialConditionValue) initialThenValue else initialElseValue)
         selfExports.update {
             it.plus(oldPath to result.value)
                 .plus(conditionPath to initialConditionValue)
@@ -92,31 +94,31 @@ class Context(val selfID: DeviceID) {
                 .plus(elsePath to initialElseValue)
         }
         launch(Dispatchers.Default) {
-            condition.collect{ newCondition ->
-                result.update { if(newCondition) th.value else el.value }
+            condition.collect { newCondition ->
+                result.update { if (newCondition) th.value else el.value }
                 selfExports.update {
                     it.plus(conditionPath to newCondition)
-                        .plus(oldPath to if(newCondition) th.value else el.value )
+                        .plus(oldPath to if (newCondition) th.value else el.value)
                 }
             }
         }
         launch(Dispatchers.Default) {
-            th.collect{ newTh ->
-                result.update { if(condition.value) newTh else el.value }
+            th.collect { newTh ->
+                result.update { if (condition.value) newTh else el.value }
                 selfExports.update {
                     it
                         .plus(thenPath to newTh)
-                        .plus(oldPath to if(condition.value) newTh else el.value)
+                        .plus(oldPath to if (condition.value) newTh else el.value)
                 }
             }
         }
         launch(Dispatchers.Default) {
-            el.collect{ newEl ->
-                result.update { if(condition.value) th.value else newEl }
+            el.collect { newEl ->
+                result.update { if (condition.value) th.value else newEl }
                 selfExports.update {
                     it
                         .plus(elsePath to newEl)
-                        .plus(oldPath to if(condition.value) th.value else newEl)
+                        .plus(oldPath to if (condition.value) th.value else newEl)
                 }
             }
         }
