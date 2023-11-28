@@ -1,29 +1,25 @@
 package io.github.filippovissani.dfrp.simulation
 
 import io.github.filippovissani.dfrp.core.AggregateExpression
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.runBlocking
+import io.github.filippovissani.dfrp.core.Language
+import io.github.filippovissani.dfrp.core.aggregate
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import org.slf4j.LoggerFactory
 
 class Simulator(private val simulation: Simulation) {
     private val logger = LoggerFactory.getLogger(javaClass)
 
-    fun <T> start(aggregateExpression: AggregateExpression<T>) {
-        runBlocking {
-            val exports =
-                simulation.contexts.map { context ->
-                    (context.selfID to aggregateExpression.compute(
-                        emptyList(),
-                        context
-                    ))
-                }
-            exports.forEach { (id, export) ->
-                simulation.environment.neighbors(id).forEach { neighborID ->
-                    export.onEach {
-                        logger.info("($id -> ${it.root})")
-                        simulation.contexts[neighborID].receiveExport(id, it)
-                    }.launchIn(this)
+    suspend fun <T> start(aggregateExpression: Language.() -> AggregateExpression<T>) = coroutineScope {
+        val exports = aggregate(simulation.contexts, aggregateExpression)
+        exports.withIndex().forEach { export ->
+            simulation.environment.neighbors(export.index).forEach { neighborID ->
+                launch(Dispatchers.Default) {
+                    export.value.collect {
+                        logger.info("(${export.index} -> ${it.root})")
+                        simulation.contexts[neighborID].receiveExport(export.index, it)
+                    }
                 }
             }
         }
