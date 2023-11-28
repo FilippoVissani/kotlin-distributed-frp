@@ -1,5 +1,6 @@
 package io.github.filippovissani.dfrp.core
 
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,8 @@ class Context(val selfID: DeviceID) {
     val selfExports: MutableStateFlow<Export<*>> = MutableStateFlow(emptyMap<Path, Any>())
     private val currentPath: MutableStateFlow<Path> = MutableStateFlow(emptyList())
 
+    private val logger = KotlinLogging.logger {}
+
     suspend fun selfID(): StateFlow<DeviceID> = coroutineScope {
         val result = MutableStateFlow(selfID)
         selfExports.update { it.plus(currentPath.value to selfID) }
@@ -30,18 +33,19 @@ class Context(val selfID: DeviceID) {
         result.asStateFlow()
     }
 
-    suspend fun <T> neighbor(expression: StateFlow<T>): StateFlow<Map<DeviceID, T>> = coroutineScope {
+    suspend fun <T> neighbor(expression: suspend () -> StateFlow<T>): StateFlow<Map<DeviceID, T>> = coroutineScope {
         val oldPath = currentPath.value
-        val alignmentPath = currentPath.value + Slot.Neighbor
-        val initialExpressionValue = expression.value
+        val alignmentPath = oldPath + Slot.Neighbor
+        currentPath.update { alignmentPath }
+        val expressionResult = expression()
+        val initialExpressionValue = expressionResult.value
         val neighborField: MutableStateFlow<Map<DeviceID, T>> =
             MutableStateFlow(mapOf(selfID to initialExpressionValue))
-        currentPath.update { alignmentPath }
         selfExports.update {
             it.plus(alignmentPath to initialExpressionValue).plus(oldPath to neighborField.value)
         }
         launch(Dispatchers.Default) {
-            expression.collect { value ->
+            expressionResult.collect { value ->
                 selfExports.update { export ->
                     export.plus(alignmentPath to value)
                 }
@@ -70,17 +74,28 @@ class Context(val selfID: DeviceID) {
     }
 
     suspend fun <T> mux(
-        condition: StateFlow<Boolean>,
-        th: StateFlow<T>,
-        el: StateFlow<T>
+        condition: suspend () -> StateFlow<Boolean>,
+        th: suspend () -> StateFlow<T>,
+        el: suspend () -> StateFlow<T>
     ): StateFlow<T> = coroutineScope {
+        // TODO THERE IS A BUG, ONLY FIRST BRANCH (THEN) IS EVALUATED
+        // THERE IS NO ROOT IN THE FINAL EXPORT OF DEVICES
         val oldPath = currentPath.value
-        val conditionPath = currentPath.value + Slot.Condition
-        val thenPath = currentPath.value + Slot.Then
-        val elsePath = currentPath.value + Slot.Else
-        val initialConditionValue = condition.value
-        val initialThenValue = th.value
-        val initialElseValue = el.value
+        val conditionPath = oldPath + Slot.Condition
+        val thenPath = oldPath + Slot.Then
+        val elsePath = oldPath + Slot.Else
+        currentPath.update { conditionPath }
+        val conditionResult = condition()
+        logger.debug { "Condition evaluated" }
+        currentPath.update { thenPath }
+        val thenResult = th()
+        logger.debug { "Then evaluated" }
+        currentPath.update { elsePath }
+        val elseResult = el()
+        logger.debug { "Else evaluated" }
+        val initialConditionValue = conditionResult.value
+        val initialThenValue = thenResult.value
+        val initialElseValue = elseResult.value
         val result: MutableStateFlow<T> =
             MutableStateFlow(if (initialConditionValue) initialThenValue else initialElseValue)
         selfExports.update {
@@ -90,31 +105,32 @@ class Context(val selfID: DeviceID) {
                 .plus(elsePath to initialElseValue)
         }
         launch(Dispatchers.Default) {
-            condition.collect { newCondition ->
-                result.update { if (newCondition) th.value else el.value }
+            conditionResult.collect { newCondition ->
+                val newResult = if (newCondition) thenResult.value else elseResult.value
+                result.update { newResult }
                 selfExports.update {
-                    it.plus(conditionPath to newCondition)
-                        .plus(oldPath to if (newCondition) th.value else el.value)
+                    it.plus(oldPath to newResult)
+                        .plus(conditionPath to newCondition)
                 }
             }
         }
         launch(Dispatchers.Default) {
-            th.collect { newTh ->
-                result.update { if (condition.value) newTh else el.value }
+            thenResult.collect { newTh ->
+                val newResult = if (conditionResult.value) newTh else elseResult.value
+                result.update { newResult }
                 selfExports.update {
-                    it
+                    it.plus(oldPath to newResult)
                         .plus(thenPath to newTh)
-                        .plus(oldPath to if (condition.value) newTh else el.value)
                 }
             }
         }
         launch(Dispatchers.Default) {
-            el.collect { newEl ->
-                result.update { if (condition.value) th.value else newEl }
+            elseResult.collect { newEl ->
+                val newResult = if (conditionResult.value) thenResult.value else newEl
+                result.update { newResult }
                 selfExports.update {
-                    it
+                    it.plus(oldPath to newResult)
                         .plus(elsePath to newEl)
-                        .plus(oldPath to if (condition.value) th.value else newEl)
                 }
             }
         }
