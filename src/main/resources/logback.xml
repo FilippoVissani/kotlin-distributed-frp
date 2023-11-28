@@ -6,14 +6,15 @@
             <level>INFO</level>
         </filter>
         <encoder>
-            <pattern>[%date{ISO8601}] [%level] [%logger] [%marker] [%thread] - %msg MDC: {%mdc}%n</pattern>
+            <pattern>[%date{ISO8601}] [%level] [%logger] [%thread] - %msg%n</pattern>
         </encoder>
     </appender>
 
     <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <append>false</append>
         <file>build/distributed-frp.log</file>
         <encoder>
-            <pattern>[%date{ISO8601}] [%level] [%logger] [%marker] [%thread] - %msg MDC: {%mdc}%n</pattern>
+            <pattern>[%date{ISO8601}] [%level] [%logger] [%thread] - %msg%n</pattern>
         </encoder>
     </appender>
 
