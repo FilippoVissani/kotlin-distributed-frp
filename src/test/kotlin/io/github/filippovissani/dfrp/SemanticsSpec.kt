@@ -196,9 +196,17 @@ class SemanticsSpec : FreeSpec({
                 computeResult(
                     testName = testName,
                     aggregateExpression = { neighbor(sense<Int>(localSensor)) },
+                    runAfter = { contexts ->
+                        contexts.forEach {
+                            it.updateLocalSensor(
+                                localSensor,
+                                localSensorValue + 10
+                            )
+                        }
+                    },
                     assertions = { context ->
                         context._neighborsStates.value[context.selfID]?.root shouldBe
-                                (0..<nDevices).associateWith { localSensorValue }
+                                (0..<nDevices).associateWith { localSensorValue + 10 }
                     }
                 )
             }
