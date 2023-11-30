@@ -1,6 +1,6 @@
 package io.github.filippovissani.dfrp.core
 
-import io.github.filippovissani.dfrp.core.extensions.mapStates
+import io.github.filippovissani.dfrp.FlowExtensions.mapStates
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

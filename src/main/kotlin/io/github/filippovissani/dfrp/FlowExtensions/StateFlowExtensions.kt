@@ -1,4 +1,4 @@
-package io.github.filippovissani.dfrp.core.extensions
+package io.github.filippovissani.dfrp.FlowExtensions
 
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
