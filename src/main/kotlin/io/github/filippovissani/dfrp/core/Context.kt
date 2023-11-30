@@ -3,13 +3,12 @@ package io.github.filippovissani.dfrp.core
 import io.github.filippovissani.dfrp.core.extensions.map
 import io.github.filippovissani.dfrp.flow.extensions.combineStates
 import io.github.filippovissani.dfrp.flow.extensions.mapStates
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class Context(private val selfID: DeviceID, initialSensorsStates: Map<SensorID, *>) {
+class Context(val selfID: DeviceID, initialSensorsStates: Map<SensorID, *>) {
     private val _neighborsStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
     private val _sensorsStates = MutableStateFlow(initialSensorsStates)
     val neighborsStates = _neighborsStates.asStateFlow()
@@ -110,16 +109,5 @@ class Context(private val selfID: DeviceID, initialSensorsStates: Map<SensorID, 
 
     fun <T> withoutSelf(aggregateExpression: AggregateExpression<NeighborField<T>>): AggregateExpression<NeighborField<T>> {
         return aggregateExpression.map { it.minus(selfID) }
-    }
-}
-
-fun <T> aggregate(
-    contexts: Iterable<Context>,
-    aggregateExpression: Context.() -> AggregateExpression<T>,
-): List<Flow<Export<T>>> {
-    return contexts.map {
-        with(it) {
-            aggregateExpression().compute(emptyList())
-        }
     }
 }
