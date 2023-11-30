@@ -1,7 +1,7 @@
 package io.github.filippovissani.dfrp.core
 
-import io.github.filippovissani.dfrp.FlowExtensions.combineStates
-import io.github.filippovissani.dfrp.FlowExtensions.mapStates
+import io.github.filippovissani.dfrp.flow.extensions.combineStates
+import io.github.filippovissani.dfrp.flow.extensions.mapStates
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

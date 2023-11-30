@@ -1,6 +1,6 @@
 package io.github.filippovissani.dfrp.core.extensions
 
-import io.github.filippovissani.dfrp.FlowExtensions.combineStates
+import io.github.filippovissani.dfrp.flow.extensions.combineStates
 import io.kotest.core.spec.style.FreeSpec
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
