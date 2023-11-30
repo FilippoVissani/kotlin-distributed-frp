@@ -3,7 +3,8 @@ package io.github.filippovissani.dfrp.core.impl
 import io.github.filippovissani.dfrp.core.ExportTree
 import io.github.filippovissani.dfrp.core.Slot
 
-internal data class ExportTreeImpl<T>(override val root: T, override val children: Map<Slot, ExportTree<*>>) : ExportTree<T> {
+internal data class ExportTreeImpl<T>(override val root: T, override val children: Map<Slot, ExportTree<*>>) :
+    ExportTree<T> {
     private val indentAmount = "  "
 
     override fun followPath(path: List<Slot>): ExportTree<*>? = when {

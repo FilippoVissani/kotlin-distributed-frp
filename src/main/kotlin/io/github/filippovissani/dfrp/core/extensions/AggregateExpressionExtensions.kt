@@ -22,7 +22,12 @@ fun <T> AggregateExpression<NeighborField<T>>.withoutSelf(): AggregateExpression
 
 fun AggregateExpression<NeighborField<Double>>.min(): AggregateExpression<Double> {
     return AggregateExpression { path, context ->
-        mapStates(this.compute(path, context)) { export -> export.map { it.values.fold(Double.POSITIVE_INFINITY) { x, y -> if (x < y) x else y } } }
+        mapStates(
+            this.compute(
+                path,
+                context
+            )
+        ) { export -> export.map { it.values.fold(Double.POSITIVE_INFINITY) { x, y -> if (x < y) x else y } } }
     }
 }
 

@@ -9,15 +9,15 @@ object Semantics {
     private fun <T> alignWithNeighbors(
         path: Path,
         context: Context,
-        extract: (Export<*>?) -> T
+        extract: (Export<*>?) -> T,
     ): StateFlow<Map<DeviceID, T>> {
         fun alignWith(neighborID: DeviceID, export: Export<*>): Pair<DeviceID, T> {
             val alignedExport = export.followPath(path)
             return Pair(neighborID, extract(alignedExport))
         }
 
-        return mapStates(context.neighborsStates){
-                neighbors -> neighbors.map { alignWith(it.key, it.value) }.toMap()
+        return mapStates(context.neighborsStates) { neighbors ->
+            neighbors.map { alignWith(it.key, it.value) }.toMap()
         }
     }
 
@@ -25,7 +25,7 @@ object Semantics {
         condition: AggregateExpression<Boolean>,
         th: AggregateExpression<T>,
         el: AggregateExpression<T>,
-        combiner: (Export<Boolean>, Export<T>, Export<T>) -> Export<T>
+        combiner: (Export<Boolean>, Export<T>, Export<T>) -> Export<T>,
     ): AggregateExpression<T> {
         return AggregateExpression { path, context ->
             val conditionExport = condition.compute(path.plus(Condition), context)
@@ -57,7 +57,7 @@ object Semantics {
     fun <T> branch(
         condition: AggregateExpression<Boolean>,
         th: AggregateExpression<T>,
-        el: AggregateExpression<T>
+        el: AggregateExpression<T>,
     ): AggregateExpression<T> {
         return conditional(condition, th, el) { c, t, e ->
             val selected = if (c.root) t else e
@@ -69,7 +69,7 @@ object Semantics {
     fun <T> mux(
         condition: AggregateExpression<Boolean>,
         th: AggregateExpression<T>,
-        el: AggregateExpression<T>
+        el: AggregateExpression<T>,
     ): AggregateExpression<T> {
         return conditional(condition, th, el) { c, t, e ->
             val selected = if (c.root) t.root else e.root
@@ -79,7 +79,7 @@ object Semantics {
 
     fun <T> loop(
         initial: T,
-        f: (AggregateExpression<T>) -> AggregateExpression<T>
+        f: (AggregateExpression<T>) -> AggregateExpression<T>,
     ): AggregateExpression<T> {
         return AggregateExpression { path, context ->
             val previousExport = mapStates(context.neighborsStates) { neighbors ->
