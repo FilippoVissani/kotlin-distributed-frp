@@ -1,13 +1,13 @@
 pull_request_rules:
   - name: Automatic merge with rebase
     conditions:
-        - check-success=ci-cd / success
+      - check-success=ci-cd / success
     actions:
       merge:
         method: rebase
 
   - name: continuously rebase pull request
     conditions:
-        - base=main
+      - base=main
     actions:
-        rebase:
+      rebase:
