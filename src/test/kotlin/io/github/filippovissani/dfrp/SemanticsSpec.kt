@@ -4,9 +4,9 @@ import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.Condition
 import io.github.filippovissani.dfrp.core.Context
 import io.github.filippovissani.dfrp.core.Else
+import io.github.filippovissani.dfrp.core.Execution.aggregate
 import io.github.filippovissani.dfrp.core.ExportTree
 import io.github.filippovissani.dfrp.core.Then
-import io.github.filippovissani.dfrp.core.aggregate
 import io.github.filippovissani.dfrp.core.extensions.combine
 import io.github.filippovissani.dfrp.core.extensions.map
 import io.github.oshai.kotlinlogging.KotlinLogging

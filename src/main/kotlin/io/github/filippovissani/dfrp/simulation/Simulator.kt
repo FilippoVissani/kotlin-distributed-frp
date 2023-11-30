@@ -2,7 +2,7 @@ package io.github.filippovissani.dfrp.simulation
 
 import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.Context
-import io.github.filippovissani.dfrp.core.aggregate
+import io.github.filippovissani.dfrp.core.Execution.aggregate
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
