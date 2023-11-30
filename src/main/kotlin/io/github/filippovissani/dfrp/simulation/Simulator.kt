@@ -18,7 +18,6 @@ class Simulator(private val simulation: Simulation) {
             simulation.environment.neighbors(id).forEach { neighborID ->
                 launch(Dispatchers.Default) {
                     export.collect {
-                        println("(${id} -> ${it.root})")
                         logger.debug { "(${id} -> ${it.root})" }
                         simulation.contexts[neighborID].receiveExport(id, it)
                     }
