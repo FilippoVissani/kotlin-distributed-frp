@@ -12,7 +12,7 @@ fun <T, R> AggregateExpression<T>.map(transform: (T) -> R): AggregateExpression<
 fun <T1, T2, R> combine(
     exp1: AggregateExpression<T1>,
     exp2: AggregateExpression<T2>,
-    transform: (T1, T2) -> R
+    transform: (T1, T2) -> R,
 ): AggregateExpression<R> {
     return AggregateExpression { path ->
         combineStates(exp1.compute(path), exp2.compute(path)) { result1, result2 ->
@@ -25,7 +25,7 @@ fun <T1, T2, T3, R> combine(
     exp1: AggregateExpression<T1>,
     exp2: AggregateExpression<T2>,
     exp3: AggregateExpression<T3>,
-    transform: (T1, T2, T3) -> R
+    transform: (T1, T2, T3) -> R,
 ): AggregateExpression<R> {
     return AggregateExpression { path ->
         combineStates(

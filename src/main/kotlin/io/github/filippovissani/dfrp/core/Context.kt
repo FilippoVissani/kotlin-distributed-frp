@@ -23,7 +23,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
 
     private fun <T> alignWithNeighbors(
         path: Path,
-        extract: (Export<*>?) -> T
+        extract: (Export<*>?) -> T,
     ): StateFlow<Map<DeviceID, T>> {
         fun alignWith(neighborID: DeviceID, export: Export<*>): Pair<DeviceID, T> {
             val alignedExport = export.followPath(path)
@@ -36,7 +36,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
         condition: AggregateExpression<Boolean>,
         th: AggregateExpression<T>,
         el: AggregateExpression<T>,
-        combiner: (Export<Boolean>, Export<T>, Export<T>) -> Export<T>
+        combiner: (Export<Boolean>, Export<T>, Export<T>) -> Export<T>,
     ): AggregateExpression<T> {
         return AggregateExpression { path ->
             val conditionExport = condition.compute(path.plus(Condition))
@@ -69,7 +69,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
     fun <T> branch(
         condition: AggregateExpression<Boolean>,
         th: AggregateExpression<T>,
-        el: AggregateExpression<T>
+        el: AggregateExpression<T>,
     ): AggregateExpression<T> {
         return conditional(condition, th, el) { c, t, e ->
             val selected = if (c.root) t else e
@@ -81,7 +81,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
     fun <T> mux(
         condition: AggregateExpression<Boolean>,
         th: AggregateExpression<T>,
-        el: AggregateExpression<T>
+        el: AggregateExpression<T>,
     ): AggregateExpression<T> {
         return conditional(condition, th, el) { c, t, e ->
             val selected = if (c.root) t.root else e.root
@@ -91,7 +91,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
 
     fun <T> loop(
         initial: T,
-        f: (AggregateExpression<T>) -> AggregateExpression<T>
+        f: (AggregateExpression<T>) -> AggregateExpression<T>,
     ): AggregateExpression<T> {
         return AggregateExpression { path ->
             val previousExport = mapStates(neighbors) { neighbors ->
@@ -109,7 +109,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
 
 fun <T> aggregate(
     contexts: Iterable<Context>,
-    aggregateExpression: Context.() -> AggregateExpression<T>
+    aggregateExpression: Context.() -> AggregateExpression<T>,
 ): List<Flow<Export<T>>> {
     return contexts.map {
         with(it) {
