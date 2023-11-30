@@ -9,16 +9,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
-    val _neighborsStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
-    val _sensorsStates = sensors.map { (k, v) -> k to MutableStateFlow(v) }.toMap()
-    val neighbors = _neighborsStates.asStateFlow()
+    private val _neighborsStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
+    private val _sensorsStates = MutableStateFlow(sensors)
+    val neighborsStates = _neighborsStates.asStateFlow()
+    val sensorsStates = _sensorsStates.asStateFlow()
 
     fun receiveExport(neighborID: DeviceID, exported: Export<*>) {
         _neighborsStates.update { it.plus(neighborID to exported) }
     }
 
     fun <T> updateLocalSensor(sensorID: SensorID, newValue: T) {
-        _sensorsStates[sensorID]?.update { newValue }
+        _sensorsStates.update { it.plus(sensorID to newValue) }
     }
 
     private fun <T> alignWithNeighbors(
@@ -29,7 +30,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
             val alignedExport = export.followPath(path)
             return Pair(neighborID, extract(alignedExport))
         }
-        return mapStates(neighbors) { neighbors -> neighbors.map { alignWith(it.key, it.value) }.toMap() }
+        return mapStates(neighborsStates) { neighbors -> neighbors.map { alignWith(it.key, it.value) }.toMap() }
     }
 
     private fun <T> conditional(
@@ -94,8 +95,8 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
         f: (AggregateExpression<T>) -> AggregateExpression<T>,
     ): AggregateExpression<T> {
         return AggregateExpression { path ->
-            val previousExport = mapStates(neighbors) { neighbors ->
-                val previousValue = neighbors[selfID]?.followPath(path)?.root as T?
+            val previousExport = mapStates(neighborsStates) { neighbors ->
+                val previousValue = neighbors[selfID]?.followPath(path)?.root as T
                 if (previousValue != null) ExportTree(previousValue) else ExportTree(initial)
             }
             f(AggregateExpression { previousExport as StateFlow<Export<T>> }).compute(path)
@@ -103,7 +104,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
     }
 
     inline fun <reified T> sense(sensorID: SensorID): AggregateExpression<T> {
-        return AggregateExpression.fromStateFlow { _sensorsStates[sensorID]?.asStateFlow() as StateFlow<T> }
+        return AggregateExpression.fromStateFlow { mapStates(sensorsStates){ sensors -> sensors[sensorID] as T } }
     }
 }
 
