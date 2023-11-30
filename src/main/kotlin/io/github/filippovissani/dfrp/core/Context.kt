@@ -1,5 +1,6 @@
 package io.github.filippovissani.dfrp.core
 
+import io.github.filippovissani.dfrp.core.extensions.map
 import io.github.filippovissani.dfrp.flow.extensions.combineStates
 import io.github.filippovissani.dfrp.flow.extensions.mapStates
 import kotlinx.coroutines.flow.Flow
@@ -8,19 +9,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
+class Context(private val selfID: DeviceID, initialSensorsStates: Map<SensorID, *>) {
     private val _neighborsStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
-    private val _sensorsStates = MutableStateFlow(sensors)
+    private val _sensorsStates = MutableStateFlow(initialSensorsStates)
     val neighborsStates = _neighborsStates.asStateFlow()
     val sensorsStates = _sensorsStates.asStateFlow()
-
-    fun receiveExport(neighborID: DeviceID, exported: Export<*>) {
-        _neighborsStates.update { it.plus(neighborID to exported) }
-    }
-
-    fun <T> updateLocalSensor(sensorID: SensorID, newValue: T) {
-        _sensorsStates.update { it.plus(sensorID to newValue) }
-    }
 
     private fun <T> alignWithNeighbors(
         path: Path,
@@ -45,6 +38,14 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
             val elseExport = el.compute(path.plus(Else))
             combineStates(conditionExport, thenExport, elseExport, combiner)
         }
+    }
+
+    fun receiveExport(neighborID: DeviceID, exported: Export<*>) {
+        _neighborsStates.update { it.plus(neighborID to exported) }
+    }
+
+    fun <T> updateLocalSensor(sensorID: SensorID, newValue: T) {
+        _sensorsStates.update { it.plus(sensorID to newValue) }
     }
 
     fun selfID(): AggregateExpression<DeviceID> {
@@ -104,7 +105,11 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
     }
 
     inline fun <reified T> sense(sensorID: SensorID): AggregateExpression<T> {
-        return AggregateExpression.fromStateFlow { mapStates(sensorsStates){ sensors -> sensors[sensorID] as T } }
+        return AggregateExpression.fromStateFlow { mapStates(sensorsStates) { sensors -> sensors[sensorID] as T } }
+    }
+
+    fun <T> withoutSelf(aggregateExpression: AggregateExpression<NeighborField<T>>): AggregateExpression<NeighborField<T>> {
+        return aggregateExpression.map { it.minus(selfID) }
     }
 }
 
