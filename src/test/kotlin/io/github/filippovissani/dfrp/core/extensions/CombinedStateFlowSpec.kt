@@ -13,7 +13,7 @@ class CombinedStateFlowSpec : FreeSpec({
             val newValue = 5
             val stateFlow1 = MutableStateFlow(value1)
             val stateFlow2 = MutableStateFlow(value2)
-            val stateFlowResult = combineStates(stateFlow1, stateFlow2){ states ->
+            val stateFlowResult = combineStates(stateFlow1, stateFlow2) { states ->
                 states.sum()
             }
             assertEquals(value1 + value2, stateFlowResult.value)
