@@ -1,18 +1,17 @@
 package io.github.filippovissani.dfrp.core
 
-import io.github.filippovissani.dfrp.core.extensions.map
+import io.github.filippovissani.dfrp.core.extensions.combineStates
+import io.github.filippovissani.dfrp.core.extensions.mapStates
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) : Language {
-    private val _neighborsStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
-    private val _sensorsStates = sensors.map { (k, v) -> k to MutableStateFlow(v) }.toMap()
-    val neighbors = _neighborsStates.asSharedFlow()
+class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) {
+    val _neighborsStates = MutableStateFlow(emptyMap<DeviceID, Export<*>>())
+    val _sensorsStates = sensors.map { (k, v) -> k to MutableStateFlow(v) }.toMap()
+    val neighbors = _neighborsStates.asStateFlow()
 
     fun receiveExport(neighborID: DeviceID, exported: Export<*>) {
         _neighborsStates.update { it.plus(neighborID to exported) }
@@ -25,13 +24,12 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) : Language {
     private fun <T> alignWithNeighbors(
         path: Path,
         extract: (Export<*>?) -> T
-    ): Flow<Map<DeviceID, T>> {
+    ): StateFlow<Map<DeviceID, T>> {
         fun alignWith(neighborID: DeviceID, export: Export<*>): Pair<DeviceID, T> {
             val alignedExport = export.followPath(path)
             return Pair(neighborID, extract(alignedExport))
         }
-
-        return neighbors.map { neighbors -> neighbors.map { alignWith(it.key, it.value) }.toMap() }
+        return mapStates(neighbors) { neighbors -> neighbors.map { alignWith(it.key, it.value) }.toMap() }
     }
 
     private fun <T> conditional(
@@ -44,30 +42,31 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) : Language {
             val conditionExport = condition.compute(path.plus(Condition))
             val thenExport = th.compute(path.plus(Then))
             val elseExport = el.compute(path.plus(Else))
-            combine(conditionExport, thenExport, elseExport, combiner)
+            combineStates(conditionExport, thenExport, elseExport, combiner)
         }
     }
 
-    override fun selfID(): AggregateExpression<DeviceID> {
+    fun selfID(): AggregateExpression<DeviceID> {
         return AggregateExpression.constant { selfID }
     }
 
-    override fun <T> constant(value: T): AggregateExpression<T> {
+    inline fun <reified T> constant(value: T): AggregateExpression<T> {
         return AggregateExpression.constant { value }
     }
 
-    override fun <T> neighbor(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighborField<T>> {
+    fun <T> neighbor(aggregateExpression: AggregateExpression<T>): AggregateExpression<NeighborField<T>> {
         return AggregateExpression { path ->
             val alignmentPath = path + Neighbor
             val neighboringValues = alignWithNeighbors(alignmentPath) { export -> export?.root as T }
-            combine(aggregateExpression.compute(path), neighboringValues) { export, values ->
+            val result = combineStates(aggregateExpression.compute(path), neighboringValues) { export, values ->
                 val neighborField = values.plus(selfID to export.root)
                 ExportTree(neighborField, mapOf(Neighbor to export))
             }
+            result
         }
     }
 
-    override fun <T> branch(
+    fun <T> branch(
         condition: AggregateExpression<Boolean>,
         th: AggregateExpression<T>,
         el: AggregateExpression<T>
@@ -79,7 +78,7 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) : Language {
         }
     }
 
-    override fun <T> mux(
+    fun <T> mux(
         condition: AggregateExpression<Boolean>,
         th: AggregateExpression<T>,
         el: AggregateExpression<T>
@@ -90,27 +89,27 @@ class Context(val selfID: DeviceID, sensors: Map<SensorID, *>) : Language {
         }
     }
 
-    override fun <T> loop(
+    fun <T> loop(
         initial: T,
         f: (AggregateExpression<T>) -> AggregateExpression<T>
     ): AggregateExpression<T> {
         return AggregateExpression { path ->
-            val previousExport = neighbors.map { neighbors ->
+            val previousExport = mapStates(neighbors) { neighbors ->
                 val previousValue = neighbors[selfID]?.followPath(path)?.root as T?
                 if (previousValue != null) ExportTree(previousValue) else ExportTree(initial)
             }
-            f(AggregateExpression { previousExport as Flow<Export<T>> }).compute(path)
+            f(AggregateExpression { previousExport as StateFlow<Export<T>> }).compute(path)
         }
     }
 
-    override fun <T> sense(sensorID: SensorID): AggregateExpression<T> {
-        return AggregateExpression.fromFlow { _sensorsStates[sensorID]?.asSharedFlow() as SharedFlow<T> }
+    inline fun <reified T> sense(sensorID: SensorID): AggregateExpression<T> {
+        return AggregateExpression.fromStateFlow { _sensorsStates[sensorID]?.asStateFlow() as StateFlow<T> }
     }
 }
 
 fun <T> aggregate(
     contexts: Iterable<Context>,
-    aggregateExpression: Language.() -> AggregateExpression<T>
+    aggregateExpression: Context.() -> AggregateExpression<T>
 ): List<Flow<Export<T>>> {
     return contexts.map {
         with(it) {
