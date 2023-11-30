@@ -264,9 +264,14 @@ class SemanticsSpec : FreeSpec({
                 computeResult(
                     testName = testName,
                     aggregateExpression = { sense<Int>(localSensor) },
-                    runAfter = { contexts -> contexts.forEach { it.updateLocalSensor(localSensor,
-                        localSensorValue + 10
-                    ) } },
+                    runAfter = { contexts ->
+                        contexts.forEach {
+                            it.updateLocalSensor(
+                                localSensor,
+                                localSensorValue + 10
+                            )
+                        }
+                    },
                     assertions = { context ->
                         context._neighborsStates.value[context.selfID]?.root shouldBe localSensorValue + 10
                     }
@@ -283,7 +288,7 @@ class SemanticsSpec : FreeSpec({
                 aggregateExpression = { mux(constant(condition), constant(thenValue), constant(elseValue)) },
                 assertions = { context ->
                     context._neighborsStates.value[context.selfID] shouldBe ExportTree(
-                        if(condition) thenValue else elseValue,
+                        if (condition) thenValue else elseValue,
                         mapOf(
                             Condition to ExportTree(condition),
                             Then to ExportTree(thenValue),
