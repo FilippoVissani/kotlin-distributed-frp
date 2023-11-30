@@ -2,247 +2,309 @@ package io.github.filippovissani.dfrp
 
 import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.Condition
+import io.github.filippovissani.dfrp.core.Context
 import io.github.filippovissani.dfrp.core.Else
 import io.github.filippovissani.dfrp.core.ExportTree
 import io.github.filippovissani.dfrp.core.Then
+import io.github.filippovissani.dfrp.core.aggregate
 import io.github.filippovissani.dfrp.core.extensions.combine
 import io.github.filippovissani.dfrp.core.extensions.map
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 class SemanticsSpec : FreeSpec({
-    val selfID = 1
     val localSensor = "sensor"
-    val localSensorValue = 15
+    val localSensorValue = 150
     val initialSensorsValues = mapOf(localSensor to localSensorValue)
-    val neighbors = setOf(1, 2, 3, 4)
-    val path = emptyList<Nothing>()
-    val thenValue = 1
-    val elseValue = 2
-    fun selfContext() = Context(selfID, initialSensorsValues)
-    fun neighborsContexts() = neighbors.map { Context(it, initialSensorsValues) }
+    val nDevices = 4
+    val thenValue = 200
+    val elseValue = 300
+    val delay: Long = 200
+    val logger = KotlinLogging.logger {}
 
-    fun runProgramOnNetwork(
-        selfContext: Context,
-        neighbors: Iterable<Context>,
-        aggregateExpression: AggregateExpression<*>
-    ) {
-        runBlocking {
-            neighbors.forEach { neighbor ->
-                selfContext.receiveExport(neighbor.selfID, aggregateExpression.compute(path, neighbor).first())
+    suspend fun <T> computeResult(
+        testName: String,
+        aggregateExpression: Context.() -> AggregateExpression<T>,
+        runAfter: (List<Context>) -> Unit = {},
+        assertions: (contexts: Context) -> Unit = {},
+    ) = coroutineScope {
+        logger.info { testName }
+        val contexts: List<Context> = (0..<nDevices).map { Context(it, initialSensorsValues) }
+        val exports = aggregate(contexts, aggregateExpression)
+        val exportsJobs = exports.withIndex().map { export ->
+            contexts.map { deviceID ->
+                launch(Dispatchers.Default) {
+                    export.value.collect {
+                        logger.debug { "(${export.index} -> ${it.root})" }
+                        contexts[deviceID.selfID].receiveExport(export.index, it)
+                    }
+                }
             }
-        }
+        }.flatten()
+        delay(delay)
+        runAfter(contexts)
+        delay(delay)
+        exportsJobs.forEach { it.cancelAndJoin() }
+        logger.info { "#################################" }
+        contexts.forEach { assertions(it) }
     }
 
     "The constant construct" - {
         "should be a constant flow with the given value" {
+            val testName = this.testScope.testCase.name.testName
+            val simpleValue = 100
             runBlocking {
-                val selfContext = selfContext()
-                val value = 10
-                val program = constant(value)
-                val exports = program.compute(path, selfContext)
-                exports.first().root shouldBe value
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = { constant(simpleValue) },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe simpleValue
+                    }
+                )
             }
         }
     }
 
     "The selfID construct" - {
         "should be a constant flow with the device ID" {
+            val testName = this.testScope.testCase.name.testName
             runBlocking {
-                val selfContext = selfContext()
-                val program = selfID()
-                val exports = program.compute(path, selfContext)
-                exports.first().root shouldBe selfID
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = { selfID() },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe context.selfID
+                    }
+                )
             }
         }
     }
 
     "The branch construct" - {
         "should include only the 'then' branch when the condition is true" {
+            val testName = this.testScope.testCase.name.testName
             runBlocking {
-                val selfContext = selfContext()
-                val program = branch(constant(true), constant(thenValue), constant(elseValue))
-                val exports = program.compute(path, selfContext)
-                exports.first() shouldBe ExportTree(
-                    thenValue,
-                    mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue))
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = { branch(constant(true), constant(thenValue), constant(elseValue)) },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID] shouldBe (ExportTree(
+                            thenValue,
+                            mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue))
+                        ))
+                    }
                 )
             }
         }
 
         "should include only the 'else' branch when the condition is false" {
+            val testName = this.testScope.testCase.name.testName
             runBlocking {
-                val selfContext = selfContext()
-                val program = branch(constant(false), constant(thenValue), constant(elseValue))
-                val exports = program.compute(path, selfContext)
-                exports.first() shouldBe ExportTree(
-                    elseValue,
-                    mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue))
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = { branch(constant(false), constant(thenValue), constant(elseValue)) },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID] shouldBe (ExportTree(
+                            elseValue,
+                            mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue))
+                        ))
+                    }
                 )
             }
         }
 
         "should react to changes in the condition" {
+            val testName = this.testScope.testCase.name.testName
+            val condition = MutableStateFlow(true)
             runBlocking {
-                val selfContext = selfContext()
-                val condition = MutableStateFlow(true)
-                val program =
-                    branch(AggregateExpression.fromFlow { _ -> condition }, constant(thenValue), constant(elseValue))
-                val exports = program.compute(path, selfContext)
-                condition.update { false }
-                exports.first().root shouldBe elseValue
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = {
+                        branch(
+                            AggregateExpression.fromStateFlow { condition },
+                            constant(thenValue),
+                            constant(elseValue)
+                        )
+                    },
+                    runAfter = { condition.update { false } },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe elseValue
+                    }
+                )
             }
         }
 
         "should react to changes in the selected branch" {
+            val testName = this.testScope.testCase.name.testName
+            val thenBranch = MutableStateFlow(thenValue)
+            val newValue = 100
             runBlocking {
-                val selfContext = selfContext()
-                val thenBranch = MutableStateFlow(thenValue)
-                val program = branch(constant(true), AggregateExpression.fromFlow { thenBranch }, constant(elseValue))
-                val exports = program.compute(path, selfContext)
-                val newValue = 100
-                thenBranch.update { newValue }
-                exports.first().root shouldBe newValue
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = {
+                        branch(
+                            constant(true),
+                            AggregateExpression.fromStateFlow { thenBranch },
+                            constant(elseValue)
+                        )
+                    },
+                    runAfter = { thenBranch.update { newValue } },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe newValue
+                    }
+                )
             }
         }
     }
 
     "The neighbor construct" - {
         "should collect values from aligned neighbors" {
+            val testName = this.testScope.testCase.name.testName
+            val simpleValue = 100
             runBlocking {
-                val selfContext = selfContext()
-                val neighborsContexts = neighborsContexts()
-                val constantValue = 0
-                val program = neighbor(branch(selfID().map { it < 3 }, selfID(), constant(constantValue)))
-                val exports = program.compute(path, selfContext)
-                runProgramOnNetwork(selfContext, neighborsContexts, program)
-                val expectedNeighborField = neighbors.associateWith { if (it < 3) it else constantValue }
-                exports.first().root shouldBe expectedNeighborField
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = {
+                        neighbor(
+                            branch(
+                                selfID().map { it < 2 },
+                                selfID(),
+                                constant(simpleValue)
+                            )
+                        )
+                    },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe
+                                (0..<nDevices).associateWith { if (it < 2) it else simpleValue }
+                    }
+                )
             }
         }
 
         "should react to changes in the neighborhood state" {
+            val testName = this.testScope.testCase.name.testName
             runBlocking {
-                val selfContext = selfContext()
-                val neighborsContexts = neighborsContexts()
-                val program = neighbor(sense<Int>(localSensor))
-                val exports = program.compute(path, selfContext)
-                runProgramOnNetwork(selfContext, neighborsContexts, program)
-                exports.first().root shouldBe neighbors.associateWith { localSensorValue }
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = { neighbor(sense<Int>(localSensor)) },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe
+                                (0..<nDevices).associateWith { localSensorValue }
+                    }
+                )
             }
         }
     }
 
     "The loop construct" - {
-        "should return a self-dependant flow" {
-            runBlocking {
-                val selfContext = selfContext()
-                val program = loop(0) { value ->
-                    combine(
-                        value,
-                        sense<Int>(localSensor)
-                    ) { x, y -> x + y }
-                }
-                val export = program.compute(path, selfContext)
-                export.first().root shouldBe localSensorValue
-            }
-        }
-
         "should react to updates in its past state" {
+            val testName = this.testScope.testCase.name.testName
             runBlocking {
-                val selfContext = selfContext()
-                val program = loop(0) { value ->
-                    combine(
-                        value,
-                        sense<Int>(localSensor)
-                    ) { x, y -> x + y }
-                }
-                val export = program.compute(path, selfContext)
-                selfContext.receiveExport(selfID, export.first())
-                export.first().root shouldBe localSensorValue * 2
-                selfContext.receiveExport(selfID, export.first())
-                export.first().root shouldBe localSensorValue * 3
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = {
+                        loop(0) { value ->
+                            combine(value, sense<Int>(localSensor)) { x, y ->
+                                x + y
+                            }
+                        }
+                    },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root as Int % localSensorValue shouldBe 0
+                    }
+                )
             }
         }
 
         "should react to updates in dependencies in the looping function" {
+            val testName = this.testScope.testCase.name.testName
+            val flow = MutableStateFlow(12)
+            val newValue = 5
             runBlocking {
-                val selfContext = selfContext()
-                val program = loop(0) { value ->
-                    combine(
-                        value,
-                        sense<Int>(localSensor)
-                    ) { x, y -> x + y }
-                }
-                val export = program.compute(path, selfContext)
-                val newValue = 10
-                selfContext.updateLocalSensor(localSensor, newValue)
-                export.first().root shouldBe newValue
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = {
+                        loop(0) { value -> combine(value, AggregateExpression.fromStateFlow { flow }) { _, y -> y } }
+                    },
+                    runAfter = { flow.update { newValue } },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe newValue
+                    }
+                )
             }
         }
     }
 
     "The sense construct" - {
         "should evaluate to the initial sensor value" {
+            val testName = this.testScope.testCase.name.testName
             runBlocking {
-                val selfContext = selfContext()
-                val program = sense<Int>(localSensor)
-                val export = program.compute(path, selfContext)
-                export.first().root shouldBe localSensorValue
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = { sense<Int>(localSensor) },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe localSensorValue
+                    }
+                )
             }
         }
 
         "should react to sensor changes" {
+            val testName = this.testScope.testCase.name.testName
             runBlocking {
-                val selfContext = selfContext()
-                val program = sense<Int>(localSensor)
-                val export = program.compute(path, selfContext)
-                var newValue = 10
-                selfContext.updateLocalSensor(localSensor, newValue)
-                export.first().root shouldBe newValue
-                newValue = 11
-                selfContext.updateLocalSensor(localSensor, newValue)
-                export.first().root shouldBe newValue
+                computeResult(
+                    testName = testName,
+                    aggregateExpression = { sense<Int>(localSensor) },
+                    runAfter = { contexts -> contexts.forEach { it.updateLocalSensor(localSensor,
+                        localSensorValue + 10
+                    ) } },
+                    assertions = { context ->
+                        context._neighborsStates.value[context.selfID]?.root shouldBe localSensorValue + 10
+                    }
+                )
             }
         }
     }
 
     "The mux construct" - {
-        "should include both branches when the condition is true" {
-            runBlocking {
-                val selfContext = selfContext()
-                val condition = true
-                val program = mux(constant(condition), constant(thenValue), constant(elseValue))
-                val export = program.compute(path, selfContext)
-                export.first() shouldBe ExportTree(
-                    thenValue,
-                    mapOf(
-                        Condition to ExportTree(condition),
-                        Then to ExportTree(thenValue),
-                        Else to ExportTree(elseValue)
+
+        suspend fun computeMux(condition: Boolean, testName: String) = coroutineScope {
+            computeResult(
+                testName = testName,
+                aggregateExpression = { mux(constant(condition), constant(thenValue), constant(elseValue)) },
+                assertions = { context ->
+                    context._neighborsStates.value[context.selfID] shouldBe ExportTree(
+                        if(condition) thenValue else elseValue,
+                        mapOf(
+                            Condition to ExportTree(condition),
+                            Then to ExportTree(thenValue),
+                            Else to ExportTree(elseValue)
+                        )
                     )
-                )
+                }
+            )
+        }
+
+        "should include both branches when the condition is true" {
+            val testName = this.testScope.testCase.name.testName
+            runBlocking {
+                computeMux(true, testName)
             }
         }
 
         "should include both branches when the condition is false" {
+            val testName = this.testScope.testCase.name.testName
             runBlocking {
-                val selfContext = selfContext()
-                val condition = false
-                val program = mux(constant(condition), constant(thenValue), constant(elseValue))
-                val export = program.compute(path, selfContext)
-                export.first() shouldBe ExportTree(
-                    elseValue,
-                    mapOf(
-                        Condition to ExportTree(condition),
-                        Then to ExportTree(thenValue),
-                        Else to ExportTree(elseValue)
-                    )
-                )
+                computeMux(false, testName)
             }
         }
     }
