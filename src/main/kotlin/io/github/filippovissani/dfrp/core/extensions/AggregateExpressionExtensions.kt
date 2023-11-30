@@ -1,13 +1,20 @@
 package io.github.filippovissani.dfrp.core.extensions
 
-import io.github.filippovissani.dfrp.flow.extensions.combineStates
-import io.github.filippovissani.dfrp.flow.extensions.mapStates
 import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.ExportTree
+import io.github.filippovissani.dfrp.core.NeighborField
+import io.github.filippovissani.dfrp.flow.extensions.combineStates
+import io.github.filippovissani.dfrp.flow.extensions.mapStates
 
 fun <T, R> AggregateExpression<T>.map(transform: (T) -> R): AggregateExpression<R> {
     return AggregateExpression { path ->
         mapStates(this.compute(path)) { it.map(transform) }
+    }
+}
+
+fun AggregateExpression<NeighborField<Double>>.min(): AggregateExpression<Double> {
+    return AggregateExpression { path ->
+        mapStates(this.compute(path)) { export -> export.map { it.values.fold(Double.POSITIVE_INFINITY) { x, y -> if (x < y) x else y } } }
     }
 }
 
