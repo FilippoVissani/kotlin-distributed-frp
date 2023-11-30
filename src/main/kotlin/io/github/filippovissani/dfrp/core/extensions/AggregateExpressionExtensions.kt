@@ -1,7 +1,7 @@
 package io.github.filippovissani.dfrp.core.extensions
 
-import io.github.filippovissani.dfrp.FlowExtensions.combineStates
-import io.github.filippovissani.dfrp.FlowExtensions.mapStates
+import io.github.filippovissani.dfrp.flow.extensions.combineStates
+import io.github.filippovissani.dfrp.flow.extensions.mapStates
 import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.ExportTree
 
