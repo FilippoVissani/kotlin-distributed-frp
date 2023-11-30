@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.stateIn
 
 private class CombinedStateFlow<T>(
     private val getValue: () -> T,
-    private val flow: Flow<T>
+    private val flow: Flow<T>,
 ) : StateFlow<T> {
 
     override val replayCache: List<T> get() = listOf(value)
@@ -25,7 +25,7 @@ private class CombinedStateFlow<T>(
  */
 fun <T> combineStates(
     getValue: () -> T,
-    flow: Flow<T>
+    flow: Flow<T>,
 ): StateFlow<T> = CombinedStateFlow(getValue, flow)
 
 /**
@@ -33,7 +33,7 @@ fun <T> combineStates(
  */
 inline fun <reified T, R> combineStates(
     vararg stateFlows: StateFlow<T>,
-    crossinline transform: (Array<T>) -> R
+    crossinline transform: (Array<T>) -> R,
 ): StateFlow<R> = combineStates(
     getValue = { transform(stateFlows.map { it.value }.toTypedArray()) },
     flow = combine(*stateFlows) { transform(it) }
@@ -41,7 +41,7 @@ inline fun <reified T, R> combineStates(
 
 inline fun <reified T, R> mapStates(
     flow: StateFlow<T>,
-    crossinline transform: (T) -> R
+    crossinline transform: (T) -> R,
 ) = combineStates(flow) { (t) -> transform(t) }
 
 /**
@@ -50,7 +50,7 @@ inline fun <reified T, R> mapStates(
 inline fun <reified T1, reified T2, R> combineStates(
     flow1: StateFlow<T1>,
     flow2: StateFlow<T2>,
-    crossinline transform: (T1, T2) -> R
+    crossinline transform: (T1, T2) -> R,
 ) = combineStates(flow1, flow2) { (t1, t2) ->
     transform(
         t1 as T1,
@@ -65,7 +65,7 @@ inline fun <reified T1, reified T2, reified T3, R> combineStates(
     flow1: StateFlow<T1>,
     flow2: StateFlow<T2>,
     flow3: StateFlow<T3>,
-    crossinline transform: (T1, T2, T3) -> R
+    crossinline transform: (T1, T2, T3) -> R,
 ) = combineStates(flow1, flow2, flow3) { (t1, t2, t3) ->
     transform(
         t1 as T1,
