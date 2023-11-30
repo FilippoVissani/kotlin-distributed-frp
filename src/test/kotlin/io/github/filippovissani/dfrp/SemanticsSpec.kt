@@ -4,8 +4,14 @@ import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.Condition
 import io.github.filippovissani.dfrp.core.Context
 import io.github.filippovissani.dfrp.core.Else
-import io.github.filippovissani.dfrp.core.Execution.aggregate
 import io.github.filippovissani.dfrp.core.ExportTree
+import io.github.filippovissani.dfrp.core.Semantics.branch
+import io.github.filippovissani.dfrp.core.Semantics.constant
+import io.github.filippovissani.dfrp.core.Semantics.loop
+import io.github.filippovissani.dfrp.core.Semantics.mux
+import io.github.filippovissani.dfrp.core.Semantics.neighbor
+import io.github.filippovissani.dfrp.core.Semantics.selfID
+import io.github.filippovissani.dfrp.core.Semantics.sense
 import io.github.filippovissani.dfrp.core.Then
 import io.github.filippovissani.dfrp.core.extensions.combine
 import io.github.filippovissani.dfrp.core.extensions.map
@@ -33,19 +39,22 @@ class SemanticsSpec : FreeSpec({
 
     suspend fun <T> computeResult(
         testName: String,
-        aggregateExpression: Context.() -> AggregateExpression<T>,
+        aggregateExpression: () -> AggregateExpression<T>,
         runAfter: (List<Context>) -> Unit = {},
         assertions: (contexts: Context) -> Unit = {},
     ) = coroutineScope {
         logger.info { testName }
         val contexts: List<Context> = (0..<nDevices).map { Context(it, initialSensorsValues) }
-        val exports = aggregate(contexts, aggregateExpression)
-        val exportsJobs = exports.withIndex().map { export ->
-            contexts.map { deviceID ->
+        val exports = contexts.map { context ->
+            (context.selfID to aggregateExpression().compute(emptyList(), context))
+        }
+        val exportsJobs = exports.map { (id, export) ->
+            contexts.map { neighbor ->
                 launch(Dispatchers.Default) {
-                    export.value.collect {
-                        logger.debug { "(${export.index} -> ${it.root})" }
-                        contexts[deviceID.selfID].receiveExport(export.index, it)
+                    export.collect {
+                        println("(${id} -> ${it.root})")
+                        logger.debug { "(${id} -> ${it.root})" }
+                        neighbor.receiveExport(id, it)
                     }
                 }
             }
