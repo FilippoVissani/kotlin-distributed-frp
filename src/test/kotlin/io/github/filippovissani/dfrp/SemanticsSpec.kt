@@ -67,7 +67,7 @@ class SemanticsSpec : FreeSpec({
                     testName = testName,
                     aggregateExpression = { constant(simpleValue) },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe simpleValue
+                        context.neighborsStates.value[context.selfID]?.root shouldBe simpleValue
                     }
                 )
             }
@@ -82,7 +82,7 @@ class SemanticsSpec : FreeSpec({
                     testName = testName,
                     aggregateExpression = { selfID() },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe context.selfID
+                        context.neighborsStates.value[context.selfID]?.root shouldBe context.selfID
                     }
                 )
             }
@@ -97,7 +97,7 @@ class SemanticsSpec : FreeSpec({
                     testName = testName,
                     aggregateExpression = { branch(constant(true), constant(thenValue), constant(elseValue)) },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID] shouldBe (ExportTree(
+                        context.neighborsStates.value[context.selfID] shouldBe (ExportTree(
                             thenValue,
                             mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue))
                         ))
@@ -113,7 +113,7 @@ class SemanticsSpec : FreeSpec({
                     testName = testName,
                     aggregateExpression = { branch(constant(false), constant(thenValue), constant(elseValue)) },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID] shouldBe (ExportTree(
+                        context.neighborsStates.value[context.selfID] shouldBe (ExportTree(
                             elseValue,
                             mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue))
                         ))
@@ -137,7 +137,7 @@ class SemanticsSpec : FreeSpec({
                     },
                     runAfter = { condition.update { false } },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe elseValue
+                        context.neighborsStates.value[context.selfID]?.root shouldBe elseValue
                     }
                 )
             }
@@ -159,7 +159,7 @@ class SemanticsSpec : FreeSpec({
                     },
                     runAfter = { thenBranch.update { newValue } },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe newValue
+                        context.neighborsStates.value[context.selfID]?.root shouldBe newValue
                     }
                 )
             }
@@ -183,7 +183,7 @@ class SemanticsSpec : FreeSpec({
                         )
                     },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe
+                        context.neighborsStates.value[context.selfID]?.root shouldBe
                                 (0..<nDevices).associateWith { if (it < 2) it else simpleValue }
                     }
                 )
@@ -205,7 +205,7 @@ class SemanticsSpec : FreeSpec({
                         }
                     },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe
+                        context.neighborsStates.value[context.selfID]?.root shouldBe
                                 (0..<nDevices).associateWith { localSensorValue + 10 }
                     }
                 )
@@ -227,7 +227,7 @@ class SemanticsSpec : FreeSpec({
                         }
                     },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root as Int % localSensorValue shouldBe 0
+                        context.neighborsStates.value[context.selfID]?.root as Int % localSensorValue shouldBe 0
                     }
                 )
             }
@@ -245,7 +245,7 @@ class SemanticsSpec : FreeSpec({
                     },
                     runAfter = { flow.update { newValue } },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe newValue
+                        context.neighborsStates.value[context.selfID]?.root shouldBe newValue
                     }
                 )
             }
@@ -260,7 +260,7 @@ class SemanticsSpec : FreeSpec({
                     testName = testName,
                     aggregateExpression = { sense<Int>(localSensor) },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe localSensorValue
+                        context.neighborsStates.value[context.selfID]?.root shouldBe localSensorValue
                     }
                 )
             }
@@ -281,7 +281,7 @@ class SemanticsSpec : FreeSpec({
                         }
                     },
                     assertions = { context ->
-                        context._neighborsStates.value[context.selfID]?.root shouldBe localSensorValue + 10
+                        context.neighborsStates.value[context.selfID]?.root shouldBe localSensorValue + 10
                     }
                 )
             }
@@ -295,7 +295,7 @@ class SemanticsSpec : FreeSpec({
                 testName = testName,
                 aggregateExpression = { mux(constant(condition), constant(thenValue), constant(elseValue)) },
                 assertions = { context ->
-                    context._neighborsStates.value[context.selfID] shouldBe ExportTree(
+                    context.neighborsStates.value[context.selfID] shouldBe ExportTree(
                         if (condition) thenValue else elseValue,
                         mapOf(
                             Condition to ExportTree(condition),
