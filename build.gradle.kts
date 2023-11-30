@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.taskTree)
     alias(libs.plugins.kover)
     alias(libs.plugins.klint)
+    alias(libs.plugins.sonarqube)
 }
 
 repositories {
@@ -23,4 +24,12 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+sonar {
+    properties {
+        property("sonar.projectKey", "FilippoVissani_kotlin-distributed-frp")
+        property("sonar.organization", "filippovissani")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
 }
