@@ -26,8 +26,8 @@ suspend fun runGradientSimulation(environment: Environment, source: Int) {
                 constant(0.0),
                 neighbor(distance)
                     .withoutSelf()
-                    .map { neighborField -> neighborField.mapValues { it.value + 1 } }
                     .min()
+                    .map { it + 1 }
             )
         }
     }
