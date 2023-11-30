@@ -1,6 +1,7 @@
 package io.github.filippovissani.dfrp.core
 
 import io.github.filippovissani.dfrp.flow.extensions.mapStates
+import io.github.filippovissani.dfrp.core.impl.AggregateExpressionImpl
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -22,9 +23,3 @@ interface AggregateExpression<T> {
     }
 }
 
-internal class AggregateExpressionImpl<T>(private val f: (Path) -> StateFlow<Export<T>>) : AggregateExpression<T> {
-
-    override fun compute(path: Path): StateFlow<Export<T>> {
-        return f(path)
-    }
-}
