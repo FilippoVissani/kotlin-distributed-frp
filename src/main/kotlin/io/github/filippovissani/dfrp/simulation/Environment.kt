@@ -13,7 +13,7 @@ interface Environment {
                     Pair(column + 1, row),
                     Pair(column - 1, row),
                     Pair(column, row + 1),
-                    Pair(column, row - 1),
+                    Pair(column, row - 1)
                 )
             }
         }
@@ -21,7 +21,7 @@ interface Environment {
         private fun grid(
             columns: Int,
             rows: Int,
-            candidateNeighbors: (Int, Int) -> Iterable<Pair<Int, Int>>,
+            candidateNeighbors: (Int, Int) -> Iterable<Pair<Int, Int>>
         ): Environment = object : Environment {
             private fun row(device: Int): Int = device / columns
 
