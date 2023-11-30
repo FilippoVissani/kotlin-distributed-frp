@@ -38,5 +38,5 @@ dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 taskTree = "com.dorongold.task-tree:2.1.1"
 build-config = { id = "com.github.gmazzo.buildconfig", version.ref = "build-config" }
-kover = {  id = "org.jetbrains.kotlinx.kover", version.ref = "kover"  }
-klint = {  id = "org.jlleitschuh.gradle.ktlint", version.ref = "klint"  }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+klint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "klint" }
