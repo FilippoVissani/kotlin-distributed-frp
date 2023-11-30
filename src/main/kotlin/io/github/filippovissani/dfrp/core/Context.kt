@@ -11,6 +11,7 @@ interface Context {
     fun <T> updateLocalSensor(sensorID: SensorID, newValue: T)
 
     companion object {
-        operator fun invoke(selfID: DeviceID, initialSensorsStates: Map<SensorID, *>): Context = ContextImpl(selfID, initialSensorsStates)
+        operator fun invoke(selfID: DeviceID, initialSensorsStates: Map<SensorID, *>): Context =
+            ContextImpl(selfID, initialSensorsStates)
     }
 }
