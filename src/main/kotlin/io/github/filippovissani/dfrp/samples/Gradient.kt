@@ -15,8 +15,11 @@ suspend fun runGradientSimulation(environment: Environment, source: Int) {
             mux(
                 sense(Sensors.IS_SOURCE.sensorID),
                 constant(0.0),
-                neighbor(distance).map { field -> field.map { it.key to (it.value?.plus(1)) }.toMap() }
-                    .map { it.minus(selfID()).values.minByOrNull { true } }
+                neighbor(distance).map { field ->
+                    field.minus(selfID).values.fold(Double.POSITIVE_INFINITY) { x, y ->
+                        if (x < y!!) x else y
+                    }.plus(1)
+                }
             )
         }
     }
@@ -24,7 +27,7 @@ suspend fun runGradientSimulation(environment: Environment, source: Int) {
 
 fun main() {
     runBlocking {
-        val environment = Environment.manhattanGrid(5, 5)
+        val environment = Environment.manhattanGrid(3, 3)
         runGradientSimulation(environment, 4)
     }
 }
