@@ -21,7 +21,7 @@ kotlinx-coroutines = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core",
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 logback-classic = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 logback-core = { module = "ch.qos.logback:logback-core", version.ref = "logback" }
-kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version = "5.1.1" }
+kotlin-logging-jvm = { module = "io.github.oshai:kotlin-logging-jvm", version = "5.1.4" }
 
 [bundles]
 kotlin-testing-common = [
