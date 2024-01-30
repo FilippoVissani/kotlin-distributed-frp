@@ -1,8 +1,12 @@
 package io.github.filippovissani.dfrp
 
+import io.github.filippovissani.dfrp.core.Condition
+import io.github.filippovissani.dfrp.core.Else
 import io.github.filippovissani.dfrp.core.ExportTree
 import io.github.filippovissani.dfrp.core.Key
+import io.github.filippovissani.dfrp.core.Neighbor
 import io.github.filippovissani.dfrp.core.Slot
+import io.github.filippovissani.dfrp.core.Then
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 
@@ -25,5 +29,29 @@ class ExportTreeSpec {
     fun traversable() {
         val exp = ExportTree(1)
         assertEquals(exp.followPath(emptyList()), exp)
+    }
+
+    @Test
+    fun branchNotAlignedWithTrue() {
+        val exp = ExportTree(
+            true,
+            mapOf(
+                Condition to ExportTree(true),
+                Then to ExportTree(true),
+            ),
+        )
+        assertEquals(exp.followPath(listOf(Else)), null)
+    }
+
+    @Test
+    fun branchNotAlignedWithFalse() {
+        val exp = ExportTree(
+            true,
+            mapOf(
+                Condition to ExportTree(false),
+                Else to ExportTree(false),
+            ),
+        )
+        assertEquals(exp.followPath(listOf(Then)), null)
     }
 }
