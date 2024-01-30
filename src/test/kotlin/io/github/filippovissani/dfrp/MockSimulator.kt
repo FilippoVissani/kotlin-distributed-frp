@@ -11,11 +11,11 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-object Simulator {
+object MockSimulator {
     private const val DELAY: Long = 200
     private val logger = KotlinLogging.logger {}
 
-    suspend fun <T> runSimulation(
+    suspend fun <T> runDefaultSimulation(
         testName: String,
         aggregateExpression: () -> AggregateExpression<T>,
         runAfter: (List<Context>) -> Unit = {},
@@ -30,7 +30,6 @@ object Simulator {
             contexts.map { neighbor ->
                 launch(Dispatchers.Default) {
                     export.collect {
-                        println("(${id} -> ${it.root})")
                         logger.debug { "(${id} -> ${it.root})" }
                         neighbor.receiveExport(id, it)
                     }
@@ -43,5 +42,32 @@ object Simulator {
         exportsJobs.forEach { it.cancelAndJoin() }
         logger.info { "#################################" }
         contexts.forEach { assertions(it) }
+    }
+
+    suspend fun <T> runSimulation(simulation: Simulation<T>) = coroutineScope {
+        logger.info { simulation.testName }
+        val results = simulation.deviceSimulations.map { deviceSimulation ->
+            DeviceSimulationResult(
+                deviceSimulation.context,
+                deviceSimulation.neighbors,
+                deviceSimulation.aggregateExpression().compute(emptyList(), deviceSimulation.context),
+            )
+        }
+        val jobs = results.map { result ->
+            result.neighbors.map { neighbor ->
+                launch(Dispatchers.Default) {
+                    result.export.collect {
+                        logger.debug { "(${result.context.selfID} -> ${it.root})" }
+                        neighbor.receiveExport(result.context.selfID, it)
+                    }
+                }
+            }
+        }.flatten()
+        delay(DELAY)
+        simulation.deviceSimulations.forEach{ it.runAfter() }
+        delay(DELAY)
+        jobs.forEach { it.cancelAndJoin() }
+        logger.info { "#################################" }
+        simulation.deviceSimulations.forEach { it.assertions() }
     }
 }
