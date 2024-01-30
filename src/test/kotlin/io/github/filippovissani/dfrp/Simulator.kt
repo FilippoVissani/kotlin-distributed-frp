@@ -1,9 +1,9 @@
-package io.github.filippovissani.dfrp.core.extensions
+package io.github.filippovissani.dfrp
 
 import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.Context
-import io.github.filippovissani.dfrp.core.extensions.DefaultConfiguration.initialSensorsValues
-import io.github.filippovissani.dfrp.core.extensions.DefaultConfiguration.N_DEVICES
+import io.github.filippovissani.dfrp.DefaultConfiguration.initialSensorsValues
+import io.github.filippovissani.dfrp.DefaultConfiguration.N_DEVICES
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
