@@ -17,7 +17,7 @@ import io.github.filippovissani.dfrp.DefaultConfiguration.LOCAL_SENSOR
 import io.github.filippovissani.dfrp.DefaultConfiguration.LOCAL_SENSOR_VALUE
 import io.github.filippovissani.dfrp.DefaultConfiguration.N_DEVICES
 import io.github.filippovissani.dfrp.DefaultConfiguration.THEN_VALUE
-import io.github.filippovissani.dfrp.Simulator.runSimulation
+import io.github.filippovissani.dfrp.MockSimulator.runDefaultSimulation
 import io.github.filippovissani.dfrp.core.extensions.combine
 import io.github.filippovissani.dfrp.core.extensions.map
 import io.kotest.common.runBlocking
@@ -34,7 +34,7 @@ class SemanticsSpec : FreeSpec({
             val testName = this.testScope.testCase.name.testName
             val simpleValue = 100
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = { constant(simpleValue) },
                     assertions = { context ->
@@ -49,7 +49,7 @@ class SemanticsSpec : FreeSpec({
         "should be a constant flow with the device ID" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = { selfID() },
                     assertions = { context ->
@@ -64,7 +64,7 @@ class SemanticsSpec : FreeSpec({
         "should include only the 'then' branch when the condition is true" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = { branch(constant(true), constant(THEN_VALUE), constant(ELSE_VALUE)) },
                     assertions = { context ->
@@ -80,7 +80,7 @@ class SemanticsSpec : FreeSpec({
         "should include only the 'else' branch when the condition is false" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = { branch(constant(false), constant(THEN_VALUE), constant(ELSE_VALUE)) },
                     assertions = { context ->
@@ -97,7 +97,7 @@ class SemanticsSpec : FreeSpec({
             val testName = this.testScope.testCase.name.testName
             val condition = MutableStateFlow(true)
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = {
                         branch(
@@ -119,7 +119,7 @@ class SemanticsSpec : FreeSpec({
             val thenBranch = MutableStateFlow(THEN_VALUE)
             val newValue = 100
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = {
                         branch(
@@ -142,7 +142,7 @@ class SemanticsSpec : FreeSpec({
             val testName = this.testScope.testCase.name.testName
             val simpleValue = 100
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = {
                         neighbor(
@@ -164,7 +164,7 @@ class SemanticsSpec : FreeSpec({
         "should react to changes in the neighborhood state" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = { neighbor(sense<Int>(LOCAL_SENSOR)) },
                     runAfter = { contexts ->
@@ -188,7 +188,7 @@ class SemanticsSpec : FreeSpec({
         "should react to updates in its past state" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = {
                         loop(0) { value ->
@@ -209,7 +209,7 @@ class SemanticsSpec : FreeSpec({
             val flow = MutableStateFlow(12)
             val newValue = 5
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = {
                         loop(0) { value -> combine(value, AggregateExpression.fromStateFlow { flow }) { _, y -> y } }
@@ -227,7 +227,7 @@ class SemanticsSpec : FreeSpec({
         "should evaluate to the initial sensor value" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = { sense<Int>(LOCAL_SENSOR) },
                     assertions = { context ->
@@ -240,7 +240,7 @@ class SemanticsSpec : FreeSpec({
         "should react to sensor changes" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                runSimulation(
+                runDefaultSimulation(
                     testName = testName,
                     aggregateExpression = { sense<Int>(LOCAL_SENSOR) },
                     runAfter = { contexts ->
@@ -262,7 +262,7 @@ class SemanticsSpec : FreeSpec({
     "The mux construct" - {
 
         suspend fun computeMux(condition: Boolean, testName: String) = coroutineScope {
-            runSimulation(
+            runDefaultSimulation(
                 testName = testName,
                 aggregateExpression = { mux(constant(condition), constant(THEN_VALUE), constant(ELSE_VALUE)) },
                 assertions = { context ->
