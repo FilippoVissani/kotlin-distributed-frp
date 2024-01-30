@@ -46,7 +46,7 @@ class ExportTreeSpec {
     @Test
     fun branchNotAlignedWithFalse() {
         val exp = ExportTree(
-            true,
+            false,
             mapOf(
                 Condition to ExportTree(false),
                 Else to ExportTree(false),
