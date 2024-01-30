@@ -1,4 +1,4 @@
-package io.github.filippovissani.dfrp.core.extensions
+package io.github.filippovissani.dfrp
 
 object DefaultConfiguration {
     const val LOCAL_SENSOR = "sensor"
