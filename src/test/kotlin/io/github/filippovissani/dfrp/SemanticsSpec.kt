@@ -2,7 +2,6 @@ package io.github.filippovissani.dfrp
 
 import io.github.filippovissani.dfrp.core.AggregateExpression
 import io.github.filippovissani.dfrp.core.Condition
-import io.github.filippovissani.dfrp.core.Context
 import io.github.filippovissani.dfrp.core.Else
 import io.github.filippovissani.dfrp.core.ExportTree
 import io.github.filippovissani.dfrp.core.Semantics.branch
@@ -13,66 +12,29 @@ import io.github.filippovissani.dfrp.core.Semantics.neighbor
 import io.github.filippovissani.dfrp.core.Semantics.selfID
 import io.github.filippovissani.dfrp.core.Semantics.sense
 import io.github.filippovissani.dfrp.core.Then
+import io.github.filippovissani.dfrp.core.extensions.DefaultConfiguration.ELSE_VALUE
+import io.github.filippovissani.dfrp.core.extensions.DefaultConfiguration.LOCAL_SENSOR
+import io.github.filippovissani.dfrp.core.extensions.DefaultConfiguration.LOCAL_SENSOR_VALUE
+import io.github.filippovissani.dfrp.core.extensions.DefaultConfiguration.N_DEVICES
+import io.github.filippovissani.dfrp.core.extensions.DefaultConfiguration.THEN_VALUE
+import io.github.filippovissani.dfrp.core.extensions.Simulator.runSimulation
 import io.github.filippovissani.dfrp.core.extensions.combine
 import io.github.filippovissani.dfrp.core.extensions.map
-import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.common.runBlocking
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 class SemanticsSpec : FreeSpec({
-    val localSensor = "sensor"
-    val localSensorValue = 150
-    val initialSensorsValues = mapOf(localSensor to localSensorValue)
-    val nDevices = 4
-    val thenValue = 200
-    val elseValue = 300
-    val delay: Long = 200
-    val logger = KotlinLogging.logger {}
-
-    suspend fun <T> computeResult(
-        testName: String,
-        aggregateExpression: () -> AggregateExpression<T>,
-        runAfter: (List<Context>) -> Unit = {},
-        assertions: (contexts: Context) -> Unit = {},
-    ) = coroutineScope {
-        logger.info { testName }
-        val contexts: List<Context> = (0..<nDevices).map { Context(it, initialSensorsValues) }
-        val exports = contexts.map { context ->
-            (context.selfID to aggregateExpression().compute(emptyList(), context))
-        }
-        val exportsJobs = exports.map { (id, export) ->
-            contexts.map { neighbor ->
-                launch(Dispatchers.Default) {
-                    export.collect {
-                        println("(${id} -> ${it.root})")
-                        logger.debug { "(${id} -> ${it.root})" }
-                        neighbor.receiveExport(id, it)
-                    }
-                }
-            }
-        }.flatten()
-        delay(delay)
-        runAfter(contexts)
-        delay(delay)
-        exportsJobs.forEach { it.cancelAndJoin() }
-        logger.info { "#################################" }
-        contexts.forEach { assertions(it) }
-    }
 
     "The constant construct" - {
         "should be a constant flow with the given value" {
             val testName = this.testScope.testCase.name.testName
             val simpleValue = 100
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
                     aggregateExpression = { constant(simpleValue) },
                     assertions = { context ->
@@ -87,7 +49,7 @@ class SemanticsSpec : FreeSpec({
         "should be a constant flow with the device ID" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
                     aggregateExpression = { selfID() },
                     assertions = { context ->
@@ -102,13 +64,13 @@ class SemanticsSpec : FreeSpec({
         "should include only the 'then' branch when the condition is true" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
-                    aggregateExpression = { branch(constant(true), constant(thenValue), constant(elseValue)) },
+                    aggregateExpression = { branch(constant(true), constant(THEN_VALUE), constant(ELSE_VALUE)) },
                     assertions = { context ->
                         context.neighborsStates.value[context.selfID] shouldBe (ExportTree(
-                            thenValue,
-                            mapOf(Condition to ExportTree(true), Then to ExportTree(thenValue))
+                            THEN_VALUE,
+                            mapOf(Condition to ExportTree(true), Then to ExportTree(THEN_VALUE))
                         ))
                     }
                 )
@@ -118,13 +80,13 @@ class SemanticsSpec : FreeSpec({
         "should include only the 'else' branch when the condition is false" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
-                    aggregateExpression = { branch(constant(false), constant(thenValue), constant(elseValue)) },
+                    aggregateExpression = { branch(constant(false), constant(THEN_VALUE), constant(ELSE_VALUE)) },
                     assertions = { context ->
                         context.neighborsStates.value[context.selfID] shouldBe (ExportTree(
-                            elseValue,
-                            mapOf(Condition to ExportTree(false), Else to ExportTree(elseValue))
+                            ELSE_VALUE,
+                            mapOf(Condition to ExportTree(false), Else to ExportTree(ELSE_VALUE))
                         ))
                     }
                 )
@@ -135,18 +97,18 @@ class SemanticsSpec : FreeSpec({
             val testName = this.testScope.testCase.name.testName
             val condition = MutableStateFlow(true)
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
                     aggregateExpression = {
                         branch(
                             AggregateExpression.fromStateFlow { condition },
-                            constant(thenValue),
-                            constant(elseValue)
+                            constant(THEN_VALUE),
+                            constant(ELSE_VALUE)
                         )
                     },
                     runAfter = { condition.update { false } },
                     assertions = { context ->
-                        context.neighborsStates.value[context.selfID]?.root shouldBe elseValue
+                        context.neighborsStates.value[context.selfID]?.root shouldBe ELSE_VALUE
                     }
                 )
             }
@@ -154,16 +116,16 @@ class SemanticsSpec : FreeSpec({
 
         "should react to changes in the selected branch" {
             val testName = this.testScope.testCase.name.testName
-            val thenBranch = MutableStateFlow(thenValue)
+            val thenBranch = MutableStateFlow(THEN_VALUE)
             val newValue = 100
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
                     aggregateExpression = {
                         branch(
                             constant(true),
                             AggregateExpression.fromStateFlow { thenBranch },
-                            constant(elseValue)
+                            constant(ELSE_VALUE)
                         )
                     },
                     runAfter = { thenBranch.update { newValue } },
@@ -180,7 +142,7 @@ class SemanticsSpec : FreeSpec({
             val testName = this.testScope.testCase.name.testName
             val simpleValue = 100
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
                     aggregateExpression = {
                         neighbor(
@@ -193,7 +155,7 @@ class SemanticsSpec : FreeSpec({
                     },
                     assertions = { context ->
                         context.neighborsStates.value[context.selfID]?.root shouldBe
-                                (0..<nDevices).associateWith { if (it < 2) it else simpleValue }
+                                (0..<N_DEVICES).associateWith { if (it < 2) it else simpleValue }
                     }
                 )
             }
@@ -202,20 +164,20 @@ class SemanticsSpec : FreeSpec({
         "should react to changes in the neighborhood state" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
-                    aggregateExpression = { neighbor(sense<Int>(localSensor)) },
+                    aggregateExpression = { neighbor(sense<Int>(LOCAL_SENSOR)) },
                     runAfter = { contexts ->
                         contexts.forEach {
                             it.updateLocalSensor(
-                                localSensor,
-                                localSensorValue + 10
+                                LOCAL_SENSOR,
+                                LOCAL_SENSOR_VALUE + 10
                             )
                         }
                     },
                     assertions = { context ->
                         context.neighborsStates.value[context.selfID]?.root shouldBe
-                                (0..<nDevices).associateWith { localSensorValue + 10 }
+                                (0..<N_DEVICES).associateWith { LOCAL_SENSOR_VALUE + 10 }
                     }
                 )
             }
@@ -226,17 +188,17 @@ class SemanticsSpec : FreeSpec({
         "should react to updates in its past state" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
                     aggregateExpression = {
                         loop(0) { value ->
-                            combine(value, sense<Int>(localSensor)) { x, y ->
+                            combine(value, sense<Int>(LOCAL_SENSOR)) { x, y ->
                                 x + y
                             }
                         }
                     },
                     assertions = { context ->
-                        context.neighborsStates.value[context.selfID]?.root as Int % localSensorValue shouldBe 0
+                        context.neighborsStates.value[context.selfID]?.root as Int % LOCAL_SENSOR_VALUE shouldBe 0
                     }
                 )
             }
@@ -247,7 +209,7 @@ class SemanticsSpec : FreeSpec({
             val flow = MutableStateFlow(12)
             val newValue = 5
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
                     aggregateExpression = {
                         loop(0) { value -> combine(value, AggregateExpression.fromStateFlow { flow }) { _, y -> y } }
@@ -265,11 +227,11 @@ class SemanticsSpec : FreeSpec({
         "should evaluate to the initial sensor value" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
-                    aggregateExpression = { sense<Int>(localSensor) },
+                    aggregateExpression = { sense<Int>(LOCAL_SENSOR) },
                     assertions = { context ->
-                        context.neighborsStates.value[context.selfID]?.root shouldBe localSensorValue
+                        context.neighborsStates.value[context.selfID]?.root shouldBe LOCAL_SENSOR_VALUE
                     }
                 )
             }
@@ -278,19 +240,19 @@ class SemanticsSpec : FreeSpec({
         "should react to sensor changes" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
-                computeResult(
+                runSimulation(
                     testName = testName,
-                    aggregateExpression = { sense<Int>(localSensor) },
+                    aggregateExpression = { sense<Int>(LOCAL_SENSOR) },
                     runAfter = { contexts ->
                         contexts.forEach {
                             it.updateLocalSensor(
-                                localSensor,
-                                localSensorValue + 10
+                                LOCAL_SENSOR,
+                                LOCAL_SENSOR_VALUE + 10
                             )
                         }
                     },
                     assertions = { context ->
-                        context.neighborsStates.value[context.selfID]?.root shouldBe localSensorValue + 10
+                        context.neighborsStates.value[context.selfID]?.root shouldBe LOCAL_SENSOR_VALUE + 10
                     }
                 )
             }
@@ -300,16 +262,16 @@ class SemanticsSpec : FreeSpec({
     "The mux construct" - {
 
         suspend fun computeMux(condition: Boolean, testName: String) = coroutineScope {
-            computeResult(
+            runSimulation(
                 testName = testName,
-                aggregateExpression = { mux(constant(condition), constant(thenValue), constant(elseValue)) },
+                aggregateExpression = { mux(constant(condition), constant(THEN_VALUE), constant(ELSE_VALUE)) },
                 assertions = { context ->
                     context.neighborsStates.value[context.selfID] shouldBe ExportTree(
-                        if (condition) thenValue else elseValue,
+                        if (condition) THEN_VALUE else ELSE_VALUE,
                         mapOf(
                             Condition to ExportTree(condition),
-                            Then to ExportTree(thenValue),
-                            Else to ExportTree(elseValue)
+                            Then to ExportTree(THEN_VALUE),
+                            Else to ExportTree(ELSE_VALUE)
                         )
                     )
                 }
