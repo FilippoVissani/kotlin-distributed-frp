@@ -54,4 +54,21 @@ class ExportTreeSpec {
         )
         assertEquals(exp.followPath(listOf(Then)), null)
     }
+
+    @Test
+    fun brokenAlignment() {
+        val exp = ExportTree(
+            mapOf(0 to true, 1 to false),
+            mapOf(
+                Neighbor to ExportTree(
+                    false,
+                    mapOf(
+                        Condition to ExportTree(false),
+                        Else to ExportTree(false),
+                    )
+                )
+            )
+        )
+        assertEquals(exp.followPath(listOf(Neighbor))?.root, false)
+    }
 }
