@@ -44,9 +44,9 @@ object MockSimulator {
         contexts.forEach { assertions(it) }
     }
 
-    suspend fun <T> runSimulation(simulation: Simulation<T>) = coroutineScope {
-        logger.info { simulation.testName }
-        val results = simulation.deviceSimulations.map { deviceSimulation ->
+    suspend fun <T> runSimulation(mockSimulation: MockSimulation<T>) = coroutineScope {
+        logger.info { mockSimulation.testName }
+        val results = mockSimulation.deviceSimulations.map { deviceSimulation ->
             DeviceSimulationResult(
                 deviceSimulation.context,
                 deviceSimulation.neighbors,
@@ -64,10 +64,10 @@ object MockSimulator {
             }
         }.flatten()
         delay(DELAY)
-        simulation.deviceSimulations.forEach{ it.runAfter() }
+        mockSimulation.deviceSimulations.forEach{ it.runAfter(it.context) }
         delay(DELAY)
         jobs.forEach { it.cancelAndJoin() }
         logger.info { "#################################" }
-        simulation.deviceSimulations.forEach { it.assertions() }
+        mockSimulation.deviceSimulations.forEach { it.assertions(it.context) }
     }
 }
