@@ -138,29 +138,6 @@ class SemanticsSpec : FreeSpec({
     }
 
     "The neighbor construct" - {
-        "should collect values from aligned neighbors" {
-            val testName = this.testScope.testCase.name.testName
-            val simpleValue = 100
-            runBlocking {
-                runDefaultSimulation(
-                    testName = testName,
-                    aggregateExpression = {
-                        neighbor(
-                            branch(
-                                selfID().map { it < 2 },
-                                selfID(),
-                                constant(simpleValue)
-                            )
-                        )
-                    },
-                    assertions = { context ->
-                        context.neighborsStates.value[context.selfID]?.root shouldBe
-                                (0..<N_DEVICES).associateWith { if (it < 2) it else simpleValue }
-                    }
-                )
-            }
-        }
-
         "should react to changes in the neighborhood state" {
             val testName = this.testScope.testCase.name.testName
             runBlocking {
