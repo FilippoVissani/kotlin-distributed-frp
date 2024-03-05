@@ -7,7 +7,7 @@ kotlin = "1.9.22"
 kover = "0.7.6"
 klint = "12.1.0"
 slf4j = "2.0.12"
-logback = "1.5.2"
+logback = "1.5.3"
 
 [libraries]
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
